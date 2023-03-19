@@ -98,8 +98,9 @@ void createDenseArray(unsigned short **arr, int m, const unsigned short *donor, 
     }
 
     for (int i = 0; i < elementSize; i++) {
+        printf("%d ", i);
         for (int j = 0; j < m; j++) {
-            printf("%s", toBinary(arr[i][j], elementSize));
+            printf("%s ", toBinary(arr[i][j], elementSize));
         }
         printf("\n");
     }
@@ -120,10 +121,11 @@ void generateDenseArray(unsigned short *arr, int m) {
 }
 
 int main() {
+
     srand(time(0));
 
     /**M - количество элементов в векторе A, B , C*/
-    unsigned short M = 16;
+    unsigned short M = 18;
     //unsigned short M = 25546;
     /**arrSize - количество элементов в сжатом векторе A, где хранятся только номера ненулевых эементов разреженного вектора A*/
     int arrSize = 1;
@@ -132,7 +134,7 @@ int main() {
     int m = (M + elementSize - 1) / elementSize;
     /**inda - сжатый вектор A, A - разреженный*/
     unsigned short inda[arrSize];
-    inda[0] = 0;
+    inda[0] = 16;
     /**b - Вектор с которым происходит свертка*/
     unsigned short b[M];
 
@@ -184,41 +186,84 @@ int main() {
          printf("\n");*/
     }
 
-    /*printf("res\n");
+    printf("res\n");
     for (int i = 0; i < M; i++) {
-        printf("%d ", c[i]);
+        printf("%d", c[i]);
     }
-    printf("\n");*/
+    printf("\n");
+
+    /**остаток деления длины вектора на размер ячейки*/
+    unsigned short mod = M % elementSize;
 
     /**метод для M не кратной elemntSize*/
-    if (M % elementSize != 0) {
+    if (mod != 0) {
         /**маска для подсчета последнего элемента*/
+        int negMod = elementSize-mod;
         unsigned short lastElementMask = -1;
-        lastElementMask = (M % elementSize) == 0 ? -1 : lastElementMask << (elementSize - (M % elementSize));
-        unsigned short firstElementMask = !lastElementMask;
-        printf("%s", toBinary(lastElementMask, elementSize));
-
+        unsigned short finishElementMask = -1;
+        lastElementMask = lastElementMask << (elementSize - mod);
+        finishElementMask = finishElementMask >> (elementSize - mod);
+        unsigned short startElementMask = ~finishElementMask;
+        /*printf("lastElementMask\n%s\n", toBinary(lastElementMask, elementSize));
+        printf("finishElementMask\n%s\n", toBinary(finishElementMask, elementSize));
+        printf("startElementMask\n%s\n", toBinary(startElementMask, elementSize));*/
         //todo добавить подсчет маски конца
 
         for (int i = 0; i < arrSize; i++) {
-            /**номер строки определяемый остатком деления сдвига на 16*/
-            int rowNumber = inda[i] % elementSize;
 
-            /**номер стартового столбца*/
-            int startColumn = inda[i] / elementSize;
+            int rowNumber = 0;
+            int startColumn = 0;
             int el = 0;
+            if (inda[i] <= mod) {
+                rowNumber = inda[i];
+            }
+            else
+            {
+                int j = M - inda[i];
+                rowNumber = (elementSize - (j%elementSize)) % elementSize;
+                startColumn = (j + elementSize - 1) / elementSize;
+            }
+
+            printf("row number %d\n", rowNumber);
+            printf("start column %d\n", startColumn);
             /**обрабатываем все элементы со сдвигом так, чтобы */
             for (int j = startColumn; j < m - 1; j++) {
                 c2[el] = c2[el] ^ b2[rowNumber][j];
                 el++;
             }
 
+
             /**обработка последнего элемента*/
-            c2[el] = c2[el] ^ (lastElementMask & b2[rowNumber][m - 1]);
+
+            unsigned short nextVal = 0;
+            unsigned short startNumber = 0;
+            unsigned short finishNumber = 0;
+
+            /**подсчет переходного элемента*/
+            startNumber = b2[rowNumber][m - 1] & lastElementMask;
+            finishNumber = (b2[rowNumber][0] & startElementMask) >> mod;
+            nextVal = startNumber + finishNumber;
+            c2[el] = c2[el] ^ nextVal;
+            el++;
+            for(int i = 0;i<startColumn -1;i++)
+            {
+                c2[el] = c2[el] ^(((b2[rowNumber][i] & finishElementMask) << negMod) + (b2[rowNumber][i+1] & startElementMask));
+                el++;
+            }
+
+            //todo проверить, вызвало ошибку
+            /**отдельная обработка последнего элемента массива должна предотвратить выход за пределы*/
+            c2[el] = c2[el] ^ ((b2[rowNumber][startColumn-1] & finishElementMask) << negMod);
 
 
         }
+        c2[m - 1] = c2[m - 1] & lastElementMask;
     }
+    printf("res\n");
+    for (int i = 0; i < m; i++) {
+        printf("%s ", toBinary(c2[i], elementSize));
+    }
+    printf("\n");
 
 
     return 0;
