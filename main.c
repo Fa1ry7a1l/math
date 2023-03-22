@@ -120,95 +120,107 @@ void generateDenseArray(unsigned short *arr, int m) {
     }
 }
 
+
 int main() {
 
     srand(time(0));
 
     /**M - количество элементов в векторе A, B , C*/
-    unsigned short M = 33;
-    //unsigned short M = 25546;
+    //unsigned short M = 131;
+    unsigned short M = 45371;
     /**arrSize - количество элементов в сжатом векторе A, где хранятся только номера ненулевых эементов разреженного вектора A*/
-    int arrSize = 1;
-    //int arrSize = 159;
+    //int arrSize = 1;
+    int arrSize = 223;
     /**m - размер сжатого вектора B, C*/
     int m = (M + elementSize - 1) / elementSize;
     /**inda - сжатый вектор A, A - разреженный*/
     unsigned short inda[arrSize];
-    inda[0] = 16;
-    for(int z = 0;z<M;z++)
-    {
+    inda[0] = 4;
+    /*for (int z = 0; z < M; z++) {
         printf("\n\n");
+        inda[0] = z;*/
+    /**b - Вектор с которым происходит свертка*/
+    unsigned short b[M];
 
-        inda[0] = z;
-        /**b - Вектор с которым происходит свертка*/
-        unsigned short b[M];
+    /**результирующий вевктор стандартного примера (размера M)*/
+    unsigned short c[M];
+    for (int i = 0; i < M; i++) {
+        c[i] = 0;
+    }
 
-        /**результирующий вевктор стандартного примера (размера M)*/
-        unsigned short c[M];
-        for (int i = 0; i < M; i++) {
-            c[i] = 0;
+    /**результирующий сжатый вектор второго способа (размера m)*/
+    unsigned short c2[m];
+    for (int i = 0; i < m; i++) {
+        c2[i] = 0;
+    }
+
+
+    /**сжатая версия b*/
+    unsigned short **b2 = calloc(elementSize, sizeof(unsigned short *));
+
+    for (int i = 0; i < elementSize; i++)
+        b2[i] = calloc(m, sizeof(unsigned short));
+
+    // generateSparseArray(inda, M, arrSize);
+
+    generateDenseArray(b, M);
+    createDenseArray(b2, m, b, M);
+
+
+    /*printf("inda\n");
+    for (int i = 0; i < arrSize; i++) {
+        printf("%d ", inda[i]);
+    }
+    printf("\n");
+
+    printf("b\n");
+    for (int i = 0; i < M; i++) {
+        printf("%d", b[i]);
+    }
+
+    printf("\n");*/
+
+    /**обычный метод*/
+    for (int i = 0; i < arrSize; i++) {
+        for (int j = 0; j < M; j++) {
+            c[j] = (c[j] + b[(inda[i] - j + M) % M]) % 2;
         }
+    }
 
-        /**результирующий сжатый вектор второго способа (размера m)*/
-        unsigned short c2[m];
-        for (int i = 0; i < m; i++) {
-            c2[i] = 0;
-        }
+    /**Печать обычного метода подсчета вектора*/
+    /*printf("res\n");
+    for (int i = 0; i < M; i++) {
+        if (i != 0 && (i % elementSize) == 0)
+            printf(" ");
+        printf("%d", c[i]);
+    }
+    for (int i = 0; i < (elementSize - M % elementSize) % elementSize; i++) {
+        printf("0");
+    }
+    printf("\n");*/
 
+    double time_spent_generating = 0;
+    double time_spent_calculating = 0;
+    int answ = 0;
+    for (int k = 0; k < 10000; k++) {
+        clock_t begin_generating = clock();
 
-        /**сжатая версия b*/
-        unsigned short **b2 = calloc(elementSize, sizeof(unsigned short *));
-
-        for (int i = 0; i < elementSize; i++)
-            b2[i] = calloc(m, sizeof(unsigned short));
-
-        // generateSparseArray(inda, M, arrSize);
-
+        generateSparseArray(inda,M,arrSize);
         generateDenseArray(b, M);
         createDenseArray(b2, m, b, M);
 
+        clock_t end_generating = clock();
+        time_spent_generating += (double) (end_generating - begin_generating) / CLOCKS_PER_SEC;
+        clock_t begin_calculating = clock();
 
-        printf("inda\n");
-        for (int i = 0; i < arrSize; i++) {
-            printf("%d ", inda[i]);
-        }
-        printf("\n");
-
-        printf("b\n");
-        for (int i = 0; i < M; i++) {
-            printf("%d", b[i]);
-        }
-
-        printf("\n");
-
-        for (int i = 0; i < arrSize; i++) {
-            for (int j = 0; j < M; j++) {
-                c[j] = (c[j] + b[(inda[i] - j + M) % M]) % 2;
-            }
-            /* printf("res\n");
-             for (int j = 0; j < M; j++) {
-                 printf("%d", c[j]);
-             }
-             printf("\n");*/
-        }
-
-        printf("res\n");
-        for (int i = 0; i < M; i++) {
-            printf("%d", c[i]);
-        }
-        for(int i = 0;i< (elementSize - M% elementSize) % elementSize;i++)
-        {
-            printf("0");
-        }
-        printf("\n");
-
+        /**подсчет вектора новым методом*/
         /**остаток деления длины вектора на размер ячейки*/
         unsigned short mod = M % elementSize;
 
         /**метод для M не кратной elemntSize*/
         if (mod != 0) {
             /**маска для подсчета последнего элемента*/
-            int negMod = elementSize-mod;
+            int negMod = elementSize - mod;
             unsigned short lastElementMask = -1;
             unsigned short finishElementMask = -1;
             lastElementMask = lastElementMask << (elementSize - mod);
@@ -221,21 +233,19 @@ int main() {
 
             for (int i = 0; i < arrSize; i++) {
 
-                int rowNumber = 0;
+                int rowNumber;
                 int startColumn = 0;
                 int el = 0;
                 if (inda[i] <= mod) {
                     rowNumber = inda[i];
-                }
-                else
-                {
+                } else {
                     int j = M - inda[i];
-                    rowNumber = (elementSize - (j%elementSize)) % elementSize;
+                    rowNumber = (elementSize - (j % elementSize)) % elementSize;
                     startColumn = (j + elementSize - 1) / elementSize;
                 }
 
-                //printf("row number %d\n", rowNumber);
-                //printf("start column %d\n", startColumn);
+                /*printf("row number %d\n", rowNumber);
+                printf("start column %d\n", startColumn);*/
                 /**обрабатываем все элементы со сдвигом так, чтобы */
                 for (int j = startColumn; j < m - 1; j++) {
                     c2[el] = c2[el] ^ b2[rowNumber][j];
@@ -245,9 +255,9 @@ int main() {
 
                 /**обработка последнего элемента*/
 
-                unsigned short nextVal = 0;
-                unsigned short startNumber = 0;
-                unsigned short finishNumber = 0;
+                unsigned short nextVal;
+                unsigned short startNumber;
+                unsigned short finishNumber;
 
                 /**подсчет переходного элемента*/
                 startNumber = b2[rowNumber][m - 1] & lastElementMask;
@@ -255,26 +265,46 @@ int main() {
                 nextVal = startNumber + finishNumber;
                 c2[el] = c2[el] ^ nextVal;
                 el++;
-                for(int i = 0;i<startColumn -1;i++)
-                {
-                    c2[el] = c2[el] ^(((b2[rowNumber][i] & finishElementMask) << negMod) + (b2[rowNumber][i+1] & startElementMask));
+
+                /*printf("after\n");
+                for (int i = 0; i < m; i++) {
+                    printf("%s ", toBinary(c2[i], elementSize));
+                }
+                printf("\n");*/
+                for (int j = 0; j < startColumn - 1; j++) {
+                    /*printf("finish %s\n",toBinary((b2[rowNumber][j] & finishElementMask), elementSize));
+                    printf("finish with mod %s\n",toBinary((b2[rowNumber][j] & finishElementMask)<< negMod, elementSize));
+                    printf("start %s\n",toBinary((b2[rowNumber][j] & finishElementMask), elementSize));
+                    printf("start with mod %s\n",toBinary((b2[rowNumber][j] & finishElementMask)<< negMod, elementSize));*/
+                    c2[el] = c2[el] ^ (((b2[rowNumber][j] & finishElementMask) << negMod) +
+                                       ((b2[rowNumber][j + 1] & startElementMask) >> mod));
                     el++;
                 }
-
-                //todo проверить, вызвало ошибку
                 /**отдельная обработка последнего элемента массива должна предотвратить выход за пределы*/
-                c2[el] = c2[el] ^ ((b2[rowNumber][startColumn-1] & finishElementMask) << negMod);
+                c2[el] = c2[el] ^ ((b2[rowNumber][startColumn - 1] & finishElementMask) << negMod);
 
 
             }
             c2[m - 1] = c2[m - 1] & lastElementMask;
         }
-        //printf("res\n");
-        for (int i = 0; i < m; i++) {
-            printf("%s", toBinary(c2[i], elementSize));
-        }
-        printf("\n");
+        unsigned short lastElementMask = -1 << (elementSize - mod);
+        clock_t end_calculating = clock();
+        time_spent_calculating += (double) (end_calculating - begin_calculating) / CLOCKS_PER_SEC;
+        answ += ((c2[m - 1] & lastElementMask) >> (elementSize - mod)) % 2;
     }
+    printf("My new Method\n");
+    printf("The elapsed time generating is %f seconds\n", time_spent_generating);
+    printf("One run is %f seconds\n", (time_spent_generating / 10000));
+    printf("The elapsed time calculating is %f seconds\n", time_spent_calculating);
+    printf("One run is %f seconds\n", (time_spent_calculating / 10000));
+    printf("answ is %d\n", answ);
+
+    //printf("res\n");
+    /*for (int i = 0; i < m; i++) {
+        printf("%s ", toBinary(c2[i], elementSize));
+    }
+    printf("\n");*/
+    //}
 
 
     return 0;
