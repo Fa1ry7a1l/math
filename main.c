@@ -201,18 +201,25 @@ int main() {
 
     double time_spent_generating = 0;
     double time_spent_calculating = 0;
+    double time_spent_generating_compressed = 0;
     int answ = 0;
     for (int k = 0; k < 10000; k++) {
         clock_t begin_generating = clock();
 
         generateSparseArray(inda,M,arrSize);
         generateDenseArray(b, M);
-        createDenseArray(b2, m, b, M);
+
 
         clock_t end_generating = clock();
         time_spent_generating += (double) (end_generating - begin_generating) / CLOCKS_PER_SEC;
-        clock_t begin_calculating = clock();
 
+        clock_t begin_generating_compressed = clock();
+        createDenseArray(b2, m, b, M);
+        clock_t finish_generating_compressed = clock();
+        time_spent_generating_compressed += (double) (finish_generating_compressed - begin_generating_compressed) / CLOCKS_PER_SEC;
+
+
+        clock_t begin_calculating = clock();
         /**подсчет вектора новым методом*/
         /**остаток деления длины вектора на размер ячейки*/
         unsigned short mod = M % elementSize;
@@ -295,6 +302,8 @@ int main() {
     printf("My new Method\n");
     printf("The elapsed time generating is %f seconds\n", time_spent_generating);
     printf("One run is %f seconds\n", (time_spent_generating / 10000));
+    printf("The elapsed time generating compressed vector is %f seconds\n", time_spent_generating_compressed);
+    printf("One run is %f seconds\n", (time_spent_generating_compressed / 10000));
     printf("The elapsed time calculating is %f seconds\n", time_spent_calculating);
     printf("One run is %f seconds\n", (time_spent_calculating / 10000));
     printf("answ is %d\n", answ);
