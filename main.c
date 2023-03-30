@@ -7,6 +7,15 @@
 
 #define elementSize 16
 
+/**стандартная свертка в F2*/
+void
+computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+
+/**стандартная свертка в Z*/
+void
+computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+
+
 /**перевод последовательности unsigned short в строку*/
 char *toBinary(unsigned short n, int len) {
     char *binary = (char *) malloc(sizeof(char) * len);
@@ -121,8 +130,8 @@ void generateDenseArray(unsigned short *arr, int m) {
 }
 
 
-void calculateSparsedAndUsual(unsigned short M, int arrSize, int m, const unsigned short *inda, unsigned short **b2,
-                              unsigned short *res) {
+void calculateSparsedAndUsual1(unsigned short M, int arrSize, int m, const unsigned short *inda, unsigned short **b2,
+                               unsigned short *res) {
     /**подсчет вектора новым методом*/
     /**остаток деления длины вектора на размер ячейки*/
     unsigned short mod = M % elementSize;
@@ -284,9 +293,129 @@ void calculateSparsedAndUsual(unsigned short M, int arrSize, int m, const unsign
     }
 }
 
+//todo не обрабатывает случай Gmod == 0;
+void calculateSparsedAndUsual2(unsigned short M, int arrSize, int m, const unsigned short *inda, unsigned short *b2,
+                               unsigned short *res) {
+    unsigned short masks[elementSize];
+    unsigned short negMasks[elementSize];
+    unsigned short temp = 0;
+    for (int i = 0; i < elementSize; i++) {
+        masks[i] = temp;
+        negMasks[i] = ~temp;
+        temp += 1 << (elementSize - i - 1);
+        printf("%s %s\n", toBinary(masks[i], elementSize), toBinary(negMasks[i], elementSize));
+    }
+    unsigned short Gmod = M % elementSize;
+    unsigned short GmodNeg = elementSize - Gmod;
+    printf("Gmod %d\n", Gmod);
+
+    for (int j = 0; j < m; j++) {
+        printf("%s ", toBinary(b2[j], elementSize));
+    }
+    printf("\n");
+
+
+    for (int i = 0; i < arrSize; i++) {
+        unsigned short pos = (M - inda[i]) % M;
+        printf("pos %d\n", pos);
+        unsigned short mod = pos % elementSize;
+        printf("mod %d\n", mod);
+        unsigned short negMod = elementSize - mod;
+        printf("negMod %d\n", negMod);
+
+        unsigned short startColumn = pos / elementSize;
+        unsigned short it = 0;
+
+        if (mod != 0) {
+            for (int j = startColumn; j < m - 2; j++) {
+                printf("%s\n", toBinary(((b2[j] & negMasks[mod]) << mod), elementSize));
+                printf("%s\n", toBinary(((b2[j + 1] & masks[mod]) >> negMod), elementSize));
+                res[it++] += ((b2[j] & negMasks[mod]) << mod) + ((b2[j + 1] & masks[negMod]) >> negMod);
+                for (int z = 0; z < m; z++)
+                    printf("%s ", toBinary(res[z], elementSize));
+                printf("\n");
+            }
+            /*for(int z = 0;z<m;z++)
+                printf("%s ", toBinary(b2[z],elementSize));
+            printf("\n");*/
+            unsigned short Nmod = abs(Gmod - mod);
+            unsigned short NmodNeg = elementSize - Nmod;
+            printf("Nmod %d\n", Nmod);
+            printf("NmodNeg %d\n", NmodNeg);
+
+            printf("-----------------\n");
+
+            for (int z = 0; z < m; z++)
+                printf("%s ", toBinary(res[z], elementSize));
+            printf("\n");
+            res[it] += ((b2[m - 2] & negMasks[mod]) << mod) + ((b2[m - 1] & masks[mod]) >> negMod);
+            for (int z = 0; z < m; z++)
+                printf("%s ", toBinary(res[z], elementSize));
+            printf("\n");
+
+            if (Gmod > mod) {
+                it++;
+
+                //первая часть в конце
+                res[it] += ((b2[m - 1] & negMasks[mod]) << mod);
+
+                for (int z = 0; z < m; z++)
+                    printf("%s ", toBinary(res[z], elementSize));
+                printf("\n");
+                //добиваем до конца
+                res[it] += ((b2[0] & masks[NmodNeg]) >> Nmod);
+                it++;
+                for (int z = 0; z < m; z++)
+                    printf("%s ", toBinary(res[z], elementSize));
+                printf("\n");
+
+                for (int j = 0; it < m; it++, j++) {
+                    printf("%s\n", toBinary(((b2[j] & negMasks[NmodNeg]) << NmodNeg), elementSize));
+                    printf("%s\n", toBinary(((b2[j + 1] & masks[NmodNeg]) >> Nmod), elementSize));
+                    res[it] += ((b2[j] & negMasks[NmodNeg]) << NmodNeg) + ((b2[j + 1] & masks[NmodNeg]) >> Nmod);
+                }
+
+
+            } else {
+
+
+                res[it] += b2[0] & masks[Nmod] >> NmodNeg;
+                it++;
+                for (int z = 0; z < m; z++)
+                    printf("%s ", toBinary(res[z], elementSize));
+                printf("\n");
+
+                for (int j = 0; it < m; it++, j++) {
+                    printf("%s\n", toBinary(((b2[j] & negMasks[Nmod]) << Nmod), elementSize));
+                    printf("%s\n", toBinary(((b2[j + 1] & masks[Nmod]) >> NmodNeg), elementSize));
+                    res[it] += ((b2[j] & negMasks[Nmod]) << Nmod) + ((b2[j + 1] & masks[Nmod]) >> NmodNeg);
+                }
+            }
+
+            printf("-----------------\n");
+
+
+            for (int z = 0; z < m; z++)
+                printf("%s ", toBinary(res[z], elementSize));
+            printf("\n");
+        } else {
+            for (int j = startColumn; j < m - 1; j++) {
+                res[it++] += b2[j];
+            }
+
+
+        }
+
+    }
+    printf("final\n");
+    for (int z = 0; z < m; z++)
+        printf("%s ", toBinary(res[z], elementSize));
+    printf("\n");
+}
+
 /**разжимает вектор*/
 void decompressArray(unsigned short M, unsigned short m, unsigned short *arrTo, unsigned short *arrFrom) {
-    int it = m - 1;
+    int it = M - 1;
     unsigned short temp = arrFrom[m - 1];
     unsigned short mod = M % elementSize;
     temp = temp >> (elementSize - (M % elementSize)) % elementSize;
@@ -297,7 +426,7 @@ void decompressArray(unsigned short M, unsigned short m, unsigned short *arrTo, 
     }
 
     //обработка основной части элементов
-    for (int i = m - 2; i > 0; i--) {
+    for (int i = m - 2; i >= 0; i--) {
         temp = arrFrom[i];
         for (int j = 0; j < elementSize; j++) {
             arrTo[it--] = temp & 1;
@@ -311,37 +440,40 @@ int main() {
 
     srand(time(0));
 
-    /**M - количество элементов в векторе A, B , C*/
-    unsigned short M = 35;
+    /**M - количество элементов в векторе A, B , C*//*
+    unsigned short M = 36;
     //unsigned short M = 45371;
-    /**arrSize - количество элементов в сжатом векторе A, где хранятся только номера ненулевых эементов разреженного вектора A*/
+    *//**arrSize - количество элементов в сжатом векторе A, где хранятся только номера ненулевых эементов разреженного вектора A*//*
     int arrSize = 1;
     //int arrSize = 223;
-    /**m - размер сжатого вектора B, C*/
+    *//**m - размер сжатого вектора B, C*//*
     int m = (M + elementSize - 1) / elementSize;
-    /**inda - сжатый вектор A, A - разреженный*/
+    *//**inda - сжатый вектор A, A - разреженный*//*
     unsigned short inda[arrSize];
-    inda[0] = 0;
-    /*for (int z = 0; z < M; z++) {
+    inda[0] = 4;
+    *//*for (int z = 0; z < M; z++) {
         printf("\n\n");
-        inda[0] = z;*/
-    /**b - Вектор с которым происходит свертка*/
+        inda[0] = z;*//*
+    *//**b - Вектор с которым происходит свертка*//*
     unsigned short b[M];
 
-    /**результирующий вевктор стандартного примера (размера M)*/
+    *//**результирующий вевктор стандартного примера (размера M)*//*
     unsigned short c[M];
     for (int i = 0; i < M; i++) {
         c[i] = 0;
     }
 
-    /**результирующий сжатый вектор второго способа (размера m)*/
+    *//**результирующий сжатый вектор второго способа (размера m)*//*
     unsigned short *c2 = calloc(m, sizeof(unsigned short));
     for (int i = 0; i < m; i++) {
         c2[i] = 0;
     }
 
 
-    /**сжатая версия b*/
+
+
+
+    *//**сжатая версия b*//*
     unsigned short **b2 = calloc(elementSize, sizeof(unsigned short *));
 
     for (int i = 0; i < elementSize; i++)
@@ -350,15 +482,21 @@ int main() {
     // generateSparseArray(inda, M, arrSize);
 
     generateDenseArray(b, M);
+    *//*for (int i = 0; i < M; i++)
+        b[i] = 1;*//*
     createDenseArray(b2, m, b, M);
 
-    unsigned short *bCopy = calloc(M, sizeof(unsigned short *));
-    decompressArray(M, m, bCopy, b2[0]);
+    calculateSparsedAndUsual2(M, arrSize, m, inda, b2[0], c2);
+
+
+    unsigned short *bCopy = calloc(M, sizeof(unsigned short *));*/
+    /*decompressArray(M, m, bCopy, b2[0]);
     printf("b and bCopy\n");
     for (int i = 0; i < M; i++)
         printf("%d", b[i]);
+    printf("\n");
     for (int i = 0; i < M; i++)
-        printf("%d", bCopy[i]);
+        printf("%d", bCopy[i]);*/
 
 
 
@@ -377,11 +515,11 @@ int main() {
     printf("\n");*/
 
     /**обычный метод*/
-    for (int i = 0; i < arrSize; i++) {
-        for (int j = 0; j < M; j++) {
-            c[j] = (c[j] + b[(inda[i] - j + M) % M]) % 2;
-        }
+    /*computationF2(M, arrSize, inda, b, c);
+    for (int i = 0; i < M; i++) {
+        printf("%d", c[i]);
     }
+    printf("\n");*/
 
     /**Печать обычного метода подсчета вектора*/
     /*printf("res\n");
@@ -417,7 +555,7 @@ int main() {
 
 
         clock_t begin_calculating = clock();
-        calculateSparsedAndUsual(M, arrSize, m, inda, b2, c2);
+        calculateSparsedAndUsual1(M, arrSize, m, inda, b2, c2);
         int mod = M % elementSize;
 
 
@@ -442,6 +580,165 @@ int main() {
     printf("\n");*/
     //}
 
+    /**|e1| + |e2| <= t
+     * |e1| = |e2| - не обязательно
+     *
+     * Для примера
+     * n = 4801
+     * |h1| = |h2| = 45
+     * |e1| + |e2| = 84
+     * T = 45/2+4*/
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 4;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+
+    unsigned short h1Compact[hLength];
+    unsigned short h2Compact[hLength];
+    unsigned short h1TransCompact[hLength];
+    unsigned short h2TransCompact[hLength];
+    unsigned short e1Compact[eLength];
+    unsigned short e2Compact[eLength];
+    generateSparseArray(h1Compact, n, hLength);
+    generateSparseArray(h2Compact, n, hLength);
+    generateSparseArray(e1Compact, n, eLength);
+    generateSparseArray(e2Compact, n, eLength);
+
+    for (int i = 0; i < hLength; i++) {
+        h1TransCompact[hLength - 1 - i] = n - 1 - h1Compact[i];
+        h2TransCompact[hLength - 1 - i] = n - 1 - h2Compact[i];
+    }
+
+    unsigned short e1[n];
+    unsigned short e2[n];
+    for (int i = 0; i < n; i++)
+        e1[i] = e2[i] = 0;
+    for (int i = 0; i < eLength; i++)
+        e1[e1Compact[i]] = 1;
+    for (int i = 0; i < eLength; i++)
+        e2[e2Compact[i]] = 1;
+
+    unsigned short c1[n];
+    unsigned short c2[n];
+    unsigned short s[n];
+
+    computationF2(n, hLength, h1Compact, e1, c1);
+    computationF2(n, hLength, h2Compact, e2, c2);
+    for (int i = 0; i < n; i++) {
+        s[i] = c1[i] ^ c2[i];
+    }
+    for (int i = 0; i < 150; i++)
+        printf("%d", s[i]);
+    printf("\n");
+
+    unsigned short u[n], v[n];
+    for (int i = 0; i < n; i++)
+        u[i] = v[i] = 0;
+
+    unsigned short sTemp[n];
+    for (int i = 0; i < n; i++) {
+        sTemp[i] = s[i];
+    }
+
+    for (int z = 0; z < num_it; z++) {
+        unsigned short upc1[n], upc2[n];
+        for (int i = 0; i < n; i++)
+            upc1[i] = upc2[i] = 0;
+        computationZ(n,hLength,h1TransCompact,sTemp,upc1);
+        computationZ(n,hLength,h2TransCompact,sTemp,upc2);
+        for(int j = 0;j<n;j++)
+        {
+            if(upc1[j] >=T)
+                u[j] = u[j] ^ 1;
+            if(upc2[j] >=T)
+                v[j] = v[j] ^ 1;
+        }
+
+        for(int i = 0;i<n;i++)
+        {
+            sTemp[i]=c1[i] = c2[i] = 0;
+        }
+        computationF2(n,hLength,h1Compact,u,c1);
+        computationF2(n,hLength,h2Compact,v,c2);
+        for(int i = 0;i<n;i++)
+        {
+            sTemp[i] = s[i] ^ c1[i] ^ c2[i];
+        }
+
+        flag = 0;
+        for(int i = 0;i<n;i++)
+        {
+            if(sTemp[i] != 0)
+            {
+                flag = 1;
+                break;
+            }
+        }
+        if(!flag)
+        {
+            exitFlag = 1;
+            break;
+        }
+
+    }
+
+    if(exitFlag)
+    {
+        printf("e1\n");
+        for(int i = 0;i<n;i++)
+        {
+            printf("%d",e1[i]);
+        }
+        printf("\n");
+        printf("e2\n");
+        for(int i = 0;i<n;i++)
+        {
+            printf("%d",e2[i]);
+        }
+        printf("\n");
+        printf("u\n");
+        for(int i = 0;i<n;i++)
+        {
+            printf("%d",u[i]);
+        }
+        printf("\n");
+        printf("v\n");
+        for(int i = 0;i<n;i++)
+        {
+            printf("%d",v[i]);
+        }
+        printf("\n");
+    }
+    else
+    {
+        printf("fail\n");
+    }
+
 
     return 0;
 }
+
+void
+computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
+    for (int i = 0; i < arrSize; i++) {
+        for (int j = 0; j < M; j++) {
+            c[j] = (c[j] + b[(inda[i] - j + M) % M]) % 2;
+        }
+    }
+}
+
+void
+computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
+    for (int i = 0; i < arrSize; i++) {
+        for (int j = 0; j < M; j++) {
+            c[j] = (c[j] + b[(inda[i] - j + M) % M]);
+        }
+    }
+}
+
