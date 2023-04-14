@@ -452,8 +452,10 @@ int main2() {
     }
 
     /**посчитали S*/
-    for (int i = 0; i < 150; i++)
-        printf("%d", s[i]);
+    /*for (int i = 0; i < 150; i++)
+        printf("%d", s[i]);*/
+    printf("s calculated\n");
+
 
 
     printf("\n");
@@ -505,26 +507,7 @@ int main2() {
     }
 
     if (exitFlag) {
-        printf("e1\n");
-        for (int i = 0; i < n; i++) {
-            printf("%d", e1[i]);
-        }
-        printf("\n");
-        printf("e2\n");
-        for (int i = 0; i < n; i++) {
-            printf("%d", e2[i]);
-        }
-        printf("\n");
-        printf("u\n");
-        for (int i = 0; i < n; i++) {
-            printf("%d", u[i]);
-        }
-        printf("\n");
-        printf("v\n");
-        for (int i = 0; i < n; i++) {
-            printf("%d", v[i]);
-        }
-        printf("\n");
+        printf("success\n");
     } else {
         printf("fail\n");
     }
@@ -766,7 +749,7 @@ int main() {
     printf("\n");
     printf("equal = %d\n", compare(M, c2, m, c));
 
-    //main3();
+    main3();
     //main2();
     return 0;
 }
