@@ -280,43 +280,57 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                 res[it] = res[it] ^ (((b2[j] & masks[mod]) >> mod) + ((b2[j - 1] & negMasks[mod]) << modNeg));
             }
 
+            printf("for last № %d\ntakes element № %d with value %s and mask %s , what gets %s\n"
+                   "takes element № %d with value %s and mask %s , what gets %s\n"
+                   "we gets %s\n\n", it, j, toBinary(b2[j], elementSize), toBinary(masks[mod], elementSize),
+                   toBinary(((b2[j] & masks[mod]) >> mod), elementSize),
+                   j - 1, toBinary(b2[j - 1], elementSize), toBinary(negMasks[mod], elementSize),
+                   toBinary(((b2[j - 1] & negMasks[mod]) << modNeg), elementSize),
+                   toBinary((((b2[j] & masks[mod]) >> mod) + ((b2[j - 1] & negMasks[mod]) << modNeg)), elementSize));
+
             res[it] = res[it] ^ (((b2[j] & masks[mod]) >> mod) + ((b2[j - 1] & negMasks[mod]) << modNeg));
             it++;
 
+
             //todo выдаст ошибку при modG == 0
-            unsigned short newMod = (mod + modG);
-            j += newMod / elementSize;
-            newMod = newMod % elementSize;
+            short newMod = ((short)mod) - modG;
+            if (newMod < 0) {
+                j++;
+                newMod += elementSize;
+            }
+
             unsigned short newModNeg = (elementSize - newMod) % elementSize;
             printf("oldMod %d Gmod %d\n", mod, modG);
             printf("newMod %d newModNeg %d\n", newMod, newModNeg);
             printf("j = %d it = %d \n", j, it);
             it = 0;
             for (; j < m - 1; j++, it++) {
-                printf("for element № %d\ntakes element № %d with value %s and mask %s , what gets %s\n"
-                       "takes element № %d with value %s and mask %s , what gets %s\n"
-                       "we gets %s\n\n",
-                       it, j, toBinary(b2[j], elementSize), toBinary(masks[newModNeg], elementSize),
-                       toBinary(((b2[j] & masks[newModNeg]) >> newModNeg), elementSize),
-                       j - 1, toBinary(b2[j - 1], elementSize), toBinary(negMasks[newModNeg], elementSize),
-                       toBinary(((b2[j - 1] & negMasks[newModNeg]) << newMod), elementSize),
-                       toBinary((((b2[j] & masks[newModNeg]) >> newModNeg) +
-                                 ((b2[j - 1] & negMasks[newModNeg]) << newMod)), elementSize));
-                res[it] =
-                        res[it] ^
-                        (((b2[j] & masks[newModNeg]) >> newModNeg) + ((b2[j - 1] & negMasks[newModNeg]) << newMod));
+            printf("for element № %d\ntakes element № %d with value %s and mask %s , what gets %s\n"
+                   "takes element № %d with value %s and mask %s , what gets %s\n"
+                   "we gets %s\n\n",
+                   it, j, toBinary(b2[j], elementSize), toBinary(masks[newMod], elementSize),
+                   toBinary(((b2[j] & masks[newMod]) >> newMod), elementSize),
+                   j - 1, toBinary(b2[j - 1], elementSize), toBinary(negMasks[newMod], elementSize),
+                   toBinary(((b2[j - 1] & negMasks[newMod]) << newModNeg), elementSize),
+                   toBinary((((b2[j] & masks[newMod]) >> newMod) +
+                             ((b2[j - 1] & negMasks[newMod]) << newModNeg)), elementSize));
+            res[it] =
+                    res[it] ^
+                    (((b2[j] & masks[newMod]) >> newMod) + ((b2[j - 1] & negMasks[newMod]) << newModNeg));
 
-                /*for (int z = 0; z < m; z++) {
+/*for (int z = 0; z < m; z++) {
                     printf("%s ", toBinary(res[z], elementSize));
                 }
                 printf("\n");*/
             }
 
-            for (int z = 0; z < m; z++) {
+
+
+            /*for (int z = 0; z < m; z++) {
                 printf("%s ", toBinary(res[z], elementSize));
             }
             printf("\n");
-
+*/
             // todo подумать что будет с окончаниями элементов
 
 
@@ -455,7 +469,6 @@ int main2() {
     /*for (int i = 0; i < 150; i++)
         printf("%d", s[i]);*/
     printf("s calculated\n");
-
 
 
     printf("\n");
@@ -708,10 +721,10 @@ int main() {
     srand(time(0));
 
 
-    unsigned short M = 53;
+    unsigned short M = 67;
     unsigned short m = (M + elementSize - 1) / elementSize;
     const unsigned short arrSize = 1;
-    unsigned short inda[1] = {/*1,2,3,4,5,6,7,8,9, */17};
+    unsigned short inda[1] = {/*1,2,3,4,5,6,7,8,9, */33};
     unsigned short b[M];
     unsigned short c2[M];
     for (int i = 0; i < M; i++) {
@@ -749,7 +762,7 @@ int main() {
     printf("\n");
     printf("equal = %d\n", compare(M, c2, m, c));
 
-    main3();
+    //main3();
     //main2();
     return 0;
 }
