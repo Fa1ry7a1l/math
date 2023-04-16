@@ -6,7 +6,8 @@
 
 
 #define elementSize 16
-
+void
+my_computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
 void
 my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
 /**стандартная свертка разреженного и не разреженного векторов F2
@@ -503,10 +504,10 @@ int main_glukhikh() {
 
     return 0;
 }
-int main_glukhikh_not_optimaz()
+int main_glukhikh_optimaz()
 {
     srand(time(0));
-
+    int epoh = 10000;
     /**|e1| + |e2| <= t
      * |e1| = |e2| - не обязательно
      *
@@ -543,14 +544,177 @@ int main_glukhikh_not_optimaz()
     unsigned short c1[n];
     unsigned short c2[n];
     unsigned short s[n];
+    double time_spent = 0;
     unsigned short u[n], v[n];
     unsigned short upc1[n], upc2[n];
     float suc = 0,faili = 0;
     /**компактное хранение e2*/
     unsigned short e2Compact[eLength];
-    for(int asd = 0;asd < 1000;asd++) {
+    for(int asd = 0;asd < epoh;asd++) {
+
+        clock_t begin = clock();
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h2Compact[i] = h1TransCompact[i] = h2TransCompact[i] = 0;
+        }
+
+        /**компактное хранение e1*/
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = e2Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(h2Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+        generateSparseArray(e2Compact, n, eLength);
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+            h2TransCompact[i] = n - h2Compact[i];
+        }
 
 
+        for (int i = 0; i < n; i++)
+            e1[i] = e2[i] = 0;
+        for (int i = 0; i < eLength; i++)
+            e1[e1Compact[i]] = 1;
+        for (int i = 0; i < eLength; i++)
+            e2[e2Compact[i]] = 1;
+
+
+        for (int i = 0; i < n; i++) {
+            c1[i] = c2[i] = s[i] = 0;
+        }
+
+
+        my_computationF2(n, hLength, h1Compact, e1, c1);
+        my_computationF2(n, hLength, h2Compact, e2, c2);
+        for (int i = 0; i < n; i++) {
+            s[i] = c1[i] ^ c2[i];
+        }
+
+        /**посчитали S*/
+        /*for (int i = 0; i < 150; i++)
+            printf("%d", s[i]);
+
+
+
+        printf("\n");*/
+
+
+        for (int i = 0; i < n; i++)
+            u[i] = v[i] = 0;
+
+        for (int i = 0; i < n; i++) {
+            sTemp[i] = s[i];
+        }
+
+        for (int z = 0; z < num_it; z++) {
+
+            for (int i = 0; i < n; i++)
+                upc1[i] = upc2[i] = 0;
+            my_computationZ(n, hLength, h1TransCompact, sTemp, upc1);
+            my_computationZ(n, hLength, h2TransCompact, sTemp, upc2);
+            for (int j = 0; j < n; j++) {
+                if (upc1[j] >= T)
+                    u[j] = u[j] ^ 1;
+                if (upc2[j] >= T)
+                    v[j] = v[j] ^ 1;
+            }
+
+            for (int i = 0; i < n; i++) {
+                sTemp[i] = c1[i] = c2[i] = 0;
+            }
+            my_computationF2(n, hLength, h1Compact, u, c1);
+            my_computationF2(n, hLength, h2Compact, v, c2);
+            for (int i = 0; i < n; i++) {
+                sTemp[i] = s[i] ^ c1[i] ^ c2[i];
+            }
+
+            /**проверка s` на ноль*/
+            flag = 0;
+            exitFlag = 0;
+            for (int i = 0; i < n; i++) {
+                if (sTemp[i] != 0) {
+                    flag = 1;
+                    break;
+                }
+            }
+            if (!flag) {
+                exitFlag = 1;
+                break;
+            }
+
+        }
+
+        if (exitFlag) {
+            //printf("success\n");
+            suc++;
+
+        } else {
+            faili++;
+            //printf("fail\n");
+        }
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+    }
+
+    printf("My mod\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n",100.0 * suc/(faili + suc));
+    return 0;
+}
+int main_glukhikh_not_optimaz()
+{
+    srand(time(0));
+    int epoh = 10000;
+    /**|e1| + |e2| <= t
+     * |e1| = |e2| - не обязательно
+     *
+     * Для примера
+     * n = 4801
+     * |h1| = |h2| = 45
+     * |e1| + |e2| = 84
+     * T = 45/2+4*/
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+    unsigned short e1[n];
+    unsigned short e2[n];
+    /**компактное хранение h1*/
+    unsigned short h1Compact[hLength];
+
+    /**компактное хранение h2*/
+    unsigned short h2Compact[hLength];
+
+    /**компактное хранение h1 в обратном порядке*/
+    unsigned short h1TransCompact[hLength];
+
+    /**компактное хранение h2 в обратном порядке*/
+    unsigned short h2TransCompact[hLength];
+    unsigned short sTemp[n];
+    unsigned short e1Compact[eLength];
+    unsigned short c1[n];
+    unsigned short c2[n];
+    unsigned short s[n];
+    double time_spent = 0;
+    unsigned short u[n], v[n];
+    unsigned short upc1[n], upc2[n];
+    float suc = 0,faili = 0;
+    /**компактное хранение e2*/
+    unsigned short e2Compact[eLength];
+    for(int asd = 0;asd < epoh ;asd++) {
+
+        clock_t begin = clock();
         for (int i = 0; i < hLength; i++) {
             h1Compact[i] = h2Compact[i] = h1TransCompact[i] = h2TransCompact[i] = 0;
         }
@@ -654,7 +818,13 @@ int main_glukhikh_not_optimaz()
             faili++;
             //printf("fail\n");
         }
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
     }
+
+    printf("default\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh ));
     printf("%f \n",100.0 * suc/(faili + suc));
     return 0;
 }
@@ -1047,12 +1217,32 @@ int main() {
 
 
     //main3();
+    main_glukhikh_optimaz();
 
-        main_glukhikh_not_optimaz();
+    main_glukhikh_not_optimaz();
     return 0;
 }
 
+void
+my_computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
+    //printf("begin computation\n");
+    int j;
+    int new_j;
+    for (unsigned short* i=inda; i != inda + arrSize; i++) {
+        j = 0;
+        new_j = M - *i + j;
+        for (; j < *i; j++) {
+            c[j] = (c[j] + b[new_j]) % 2;
+            new_j++;
+        }
+        new_j = j - *i;
+        for (; j < M; j++) {
+            c[j] = (c[j] + b[new_j]) % 2;
+            new_j++;
+        }
+    }
 
+}
 void computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
     for (int i = 0; i < arrSize; i++) {
         for (int j = 0; j < M; j++) {
@@ -1069,23 +1259,46 @@ computationZ(unsigned short M, int arrSize, const unsigned short *inda, const un
         }
     }
 }
-
+//void
+//my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
+//    //printf("begin computation\n");
+//    int i=0,j;
+//    int new_j;
+//    for (; i < arrSize; i++) {
+//        j = 0;
+//        new_j = M - inda[i]+j;
+//        for (; j < inda[i]; j++) {
+//            c[j] = (c[j] + b[new_j]);
+//            new_j++;
+//        }
+//        new_j = j - inda[i];
+//        for (; j < M; j++) {
+//            c[j] = (c[j] + b[new_j]);
+//            new_j++;
+//        }
+//    }
+//
+//}
 void
 my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
     //printf("begin computation\n");
-    int i=0,j;
-    for (; i < arrSize; i++) {
+    int j;
+    int new_j;
+    for (unsigned short* i=inda; i != inda + arrSize; i++) {
         j = 0;
-        for (; j < inda[i]; j++) {
-            c[j] = (c[j] + b[M - inda[i]+j]);
+        new_j = M - *i + j;
+        for (; j < *i; j++) {
+            c[j] = (c[j] + b[new_j]);
+            new_j++;
         }
+        new_j = j - *i;
         for (; j < M; j++) {
-            c[j] = (c[j] + b[j - inda[i]]);
+          c[j] = (c[j] + b[new_j]);
+          new_j++;
         }
     }
 
 }
-
 
 
 
