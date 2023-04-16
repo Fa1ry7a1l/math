@@ -1032,49 +1032,7 @@ int main3() {
 int main() {
 
 
-    /*srand(time(0));
 
-
-    unsigned short M = 67;
-    unsigned short m = (M + elementSize - 1) / elementSize;
-    const unsigned short arrSize = 1;
-    unsigned short inda[1] = {*//*1,2,3,4,5,6,7,8,9, *//*33};
-    unsigned short b[M];
-    unsigned short c2[M];
-    for (int i = 0; i < M; i++) {
-        c2[i] = 0;
-    }
-    unsigned short b2[m], c[m];
-    for (int i = 0; i < m; i++)
-        b2[i] = c[i] = 0;
-
-    generateDenseArray(b, M);
-    createDenseArray(b2, m, b, M);
-    for (int i = 0; i < M; i++) {
-        printf("%d", b[i]);
-    }
-    printf("\n");
-    for (int i = 0; i < m; i++) {
-        printf("%s ", toBinary(b2[i], elementSize));
-    }
-    printf("\n");
-    printf("\n");
-
-    calculateSparseAndUsual2(M, arrSize, m, inda, b2, c);
-    computationF2(M, arrSize, inda, b, c2);
-
-    for (int z = 0; z < m; z++) {
-        printf("%s ", toBinary(c[z], elementSize));
-    }
-    printf("\n");
-
-    for (int i = 0; i < M; i++) {
-        if (i != 0 && (i % elementSize) == 0)
-            printf(" ");
-        printf("%d", c2[i]);
-    }
-    printf("\n");
-    printf("equal = %d\n", compare(M, c2, m, c));*/
 
     //main3();
     for (int i = 0; i < 1000; i++)
@@ -1107,7 +1065,6 @@ my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const
     for (; i < arrSize; i++) {
         j = 0;
         for (; j < inda[i]; j++) {
-            //printf ("left: %d  right: %d\n", (M - inda[i]+j),((j - inda[i] + M) % M));
             c[j] = (c[j] + b[M - inda[i]+j]);
         }
         for (; j < M; j++) {
