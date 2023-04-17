@@ -1424,27 +1424,6 @@ computationZ(unsigned short M, int arrSize, const unsigned short *inda, const un
     }
 }
 void
-my_computationZb(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
-    //printf("begin computation\n");
-    int j;
-    int new_j;
-    unsigned short* end = inda + arrSize;
-    for (unsigned short* i=inda; i != end; i++) {
-        j = 0;
-        new_j = M - *i;
-        for (; j < *i; j++) {
-            c[j] = (c[j] + b[new_j]);
-            new_j++;
-        }
-        new_j = j - *i;
-        for (; j < M; j++) {
-            c[j] = (c[j] + b[new_j]);
-            new_j++;
-        }
-    }
-
-}
-void
 my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
     //printf("begin computation\n");
     unsigned short *pointer_c;
@@ -1465,6 +1444,29 @@ my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const
             *pointer_c= (*pointer_c + b[new_j]);
             new_j++;
             pointer_c++;
+
+        }
+    }
+
+}
+void
+my_computationZ_test(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
+    //printf("begin computation\n");
+    unsigned short *pointer_c;
+    unsigned short *pointer_b;
+    unsigned short* end = inda + arrSize;
+    for (unsigned short* i=inda; i != end; i++) {
+        pointer_c = c;
+        pointer_b = b + M - *i;
+        for (; pointer_c != c + *i; pointer_c++) {
+            *pointer_c= (*pointer_c + *pointer_b);
+            pointer_b++;
+        }
+        pointer_b = b ;
+        pointer_b+= pointer_c - c - *i;
+        for (; pointer_c != c + M; pointer_c++) {
+            *pointer_c= (*pointer_c + *pointer_b);
+            pointer_b++;
 
         }
     }
