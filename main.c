@@ -98,7 +98,6 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
     unsigned short modG = M % elementSize;
     unsigned short modGNeg = (elementSize - modG) % elementSize;
     unsigned short temp = -1;
-    unsigned short tempSaveLastElement = b2[m - 1];
 
 
     for (int i = 0; i < elementSize; i++) {
@@ -162,20 +161,22 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
 
 
             /**for по элементам, которые больше elementSize*/
+            unsigned short lastElementShifted = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & negMasks[modGNeg]) << modG);
+            //printf("lastElementShifted=%s\n", toBinary(lastElementShifted, elementSize));
             for (; i < arrSize; i++) {
                 unsigned short mod = inda[i] % elementSize;
                 unsigned short modNeg = (elementSize - mod) % elementSize;
                 unsigned short start = inda[i] / elementSize;
 
-                //printf("mod %d modNeg %d\n", mod, modNeg);
+                /*printf("mod %d modNeg %d\n", mod, modNeg);*/
 
-
-                res[start] = res[start] ^ (b2[0] & masks[mod]) >> mod;
-                /*printf("start\n");*/
-                /*for (int z = 0; z < m; z++) {
+                res[start] =
+                        res[start] ^ (((b2[0] & masks[mod]) >> mod) + ((lastElementShifted & negMasks[mod]) << modNeg));
+                /*printf("start\n");
+                for (int z = 0; z < m; z++) {
                     printf("%s ", toBinary(res[z], elementSize));
-                }*/
-                /*printf("\n");*/
+                }
+                printf("\n");*/
                 unsigned short it = start + 1;
                 int j = 1;
                 for (; it < m; it++, j++) {
@@ -185,34 +186,61 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                            toBinary((b2[j - 1] & negMasks[mod]), elementSize));*/
                     res[it] = res[it] ^ (((b2[j] & masks[mod]) >> mod) + ((b2[j - 1] & negMasks[mod]) << modNeg));
                 }
+                j--;
 
-                //todo выдаст ошибку при modG == 0
-                unsigned short newMod = (mod + modG) % elementSize;
-                unsigned short newModNeg = (elementSize - newMod) % elementSize;
-                /*printf("newMod %d newModNeg %d\n", newMod, newModNeg);
-                printf("%d\n", j);*/
-                it = 0;
-                for (; j < m - 1; j++, it++) {
-                    /*printf("new values %s %s %s %s\n", toBinary(((b2[j] & masks[newModNeg]) >> newMod), elementSize),
-                           toBinary((b2[j] & masks[newModNeg]), elementSize),
-                           toBinary((b2[j - 1] & negMasks[newModNeg]) << newMod, elementSize),
-                           toBinary((b2[j - 1] & negMasks[newModNeg]), elementSize));*/
-                    res[it] =
-                            res[it] ^
-                            (((b2[j] & masks[newModNeg]) >> newMod) + ((b2[j - 1] & negMasks[newModNeg]) << newMod));
-                }
-
-                /*for (int z = 0; z < m; z++) {
+                /*printf("after first cycle \n");
+                for (int z = 0; z < m; z++) {
                     printf("%s ", toBinary(res[z], elementSize));
                 }
                 printf("\n");*/
 
-                // todo подумать что будет с окончаниями элементов
 
 
-                unsigned short temp3 = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & negMasks[modGNeg]) << modG);
+                //todo выдаст ошибку при modG == 0
+                short newMod = ((short) mod) - modG;
+                int flag = 0;
 
-                res[it] = res[it] ^ temp3;
+                if (newMod < 0 || modG == 0) {
+                    flag++;
+                    /* printf("inside\n");*/
+                    j++;
+                    newMod = (newMod + elementSize) % elementSize;
+
+                }
+
+                /*printf("start %d\n", start);*/
+
+                unsigned short newModNeg = (elementSize - newMod) % elementSize;
+                /*printf("oldMod %d Gmod %d\n", mod, modG);
+                printf("newMod %d newModNeg %d\n", newMod, newModNeg);
+                printf("j = %d it = %d \n", j, it);*/
+                it = 0;
+                for (; j < m - 1; j++, it++) {
+                    /*printf("for element № %d\ntakes element № %d with value %s and mask %s , what gets %s\n"
+                           "takes element № %d with value %s and mask %s , what gets %s\n"
+                           "we gets %s\n\n",
+                           it, j, toBinary(b2[j], elementSize), toBinary(masks[newMod], elementSize),
+                           toBinary(((b2[j] & masks[newMod]) >> newMod), elementSize),
+                           j - 1, toBinary(b2[j - 1], elementSize), toBinary(negMasks[newMod], elementSize),
+                           toBinary(((b2[j - 1] & negMasks[newMod]) << newModNeg), elementSize),
+                           toBinary((((b2[j] & masks[newMod]) >> newMod) +
+                                     ((b2[j - 1] & negMasks[newMod]) << newModNeg)), elementSize));*/
+                    res[it] =
+                            res[it] ^
+                            (((b2[j] & masks[newMod]) >> newMod) + ((b2[j - 1] & negMasks[newMod]) << newModNeg));
+
+                    /*for (int z = 0; z < m; z++) {
+                        printf("%s ", toBinary(res[z], elementSize));
+                    }
+                    printf("\n");*/
+                }
+
+                if (flag) {
+                    res[it] =
+                            res[it] ^
+                            (((b2[j] & masks[newMod]) >> newMod) + ((b2[j - 1] & negMasks[newMod]) << newModNeg));
+                    it++;
+                }
             }
 
 
@@ -263,61 +291,61 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
     } else {
 
         unsigned short lastElementShifted = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & negMasks[modGNeg]) << modG);
-        printf("lastElementShifted=%s\n", toBinary(lastElementShifted, elementSize));
+        //printf("lastElementShifted=%s\n", toBinary(lastElementShifted, elementSize));
         for (int i = 0; i < arrSize; i++) {
             unsigned short mod = inda[i] % elementSize;
             unsigned short modNeg = (elementSize - mod) % elementSize;
             unsigned short start = inda[i] / elementSize;
 
-            //printf("mod %d modNeg %d\n", mod, modNeg);
+            /*printf("mod %d modNeg %d\n", mod, modNeg);*/
 
-            res[start] = res[start] ^ (((b2[0] & masks[mod]) >> mod)+((lastElementShifted & negMasks[mod]) << modNeg));
-            /*printf("start\n");*/
-            /*for (int z = 0; z < m; z++) {
+            res[start] =
+                    res[start] ^ (((b2[0] & masks[mod]) >> mod) + ((lastElementShifted & negMasks[mod]) << modNeg));
+            /*printf("start\n");
+            for (int z = 0; z < m; z++) {
                 printf("%s ", toBinary(res[z], elementSize));
-            }*/
-            /*printf("\n");*/
+            }
+            printf("\n");*/
             unsigned short it = start + 1;
             int j = 1;
-            for (; it < m - 1; it++, j++) {
+            for (; it < m; it++, j++) {
                 /*printf("%s %s %s %s\n", toBinary(((b2[j] & masks[mod]) >> mod), elementSize),
                        toBinary((b2[j] & masks[mod]), elementSize),
                        toBinary((b2[j - 1] & negMasks[mod]) << modNeg, elementSize),
                        toBinary((b2[j - 1] & negMasks[mod]), elementSize));*/
                 res[it] = res[it] ^ (((b2[j] & masks[mod]) >> mod) + ((b2[j - 1] & negMasks[mod]) << modNeg));
             }
+            j--;
 
-            /* printf("for last № %d\ntakes element № %d with value %s and mask %s , what gets %s\n"
-                    "takes element № %d with value %s and mask %s , what gets %s\n"
-                    "we gets %s\n\n", it, j, toBinary(b2[j], elementSize), toBinary(masks[mod], elementSize),
-                    toBinary(((b2[j] & masks[mod]) >> mod), elementSize),
-                    j - 1, toBinary(b2[j - 1], elementSize), toBinary(negMasks[mod], elementSize),
-                    toBinary(((b2[j - 1] & negMasks[mod]) << modNeg), elementSize),
-                    toBinary((((b2[j] & masks[mod]) >> mod) + ((b2[j - 1] & negMasks[mod]) << modNeg)), elementSize));*/
+            /*printf("after first cycle \n");
+            for (int z = 0; z < m; z++) {
+                printf("%s ", toBinary(res[z], elementSize));
+            }
+            printf("\n");*/
 
-            res[it] = res[it] ^ (((b2[j] & masks[mod]) >> mod) + ((b2[j - 1] & negMasks[mod]) << modNeg));
-            it++;
 
 
             //todo выдаст ошибку при modG == 0
             short newMod = ((short) mod) - modG;
             int flag = 0;
-            if (newMod < 0) {
+
+            if (newMod < 0 || modG == 0) {
                 flag++;
-                //printf("inside\n");
+                /* printf("inside\n");*/
                 j++;
-                newMod += elementSize;
+                newMod = (newMod + elementSize) % elementSize;
+
             }
 
-            printf("start %d\n", start);
+            /*printf("start %d\n", start);*/
 
             unsigned short newModNeg = (elementSize - newMod) % elementSize;
-            printf("oldMod %d Gmod %d\n", mod, modG);
+            /*printf("oldMod %d Gmod %d\n", mod, modG);
             printf("newMod %d newModNeg %d\n", newMod, newModNeg);
-            printf("j = %d it = %d \n", j, it);
+            printf("j = %d it = %d \n", j, it);*/
             it = 0;
             for (; j < m - 1; j++, it++) {
-                printf("for element № %d\ntakes element № %d with value %s and mask %s , what gets %s\n"
+                /*printf("for element № %d\ntakes element № %d with value %s and mask %s , what gets %s\n"
                        "takes element № %d with value %s and mask %s , what gets %s\n"
                        "we gets %s\n\n",
                        it, j, toBinary(b2[j], elementSize), toBinary(masks[newMod], elementSize),
@@ -325,12 +353,12 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                        j - 1, toBinary(b2[j - 1], elementSize), toBinary(negMasks[newMod], elementSize),
                        toBinary(((b2[j - 1] & negMasks[newMod]) << newModNeg), elementSize),
                        toBinary((((b2[j] & masks[newMod]) >> newMod) +
-                                 ((b2[j - 1] & negMasks[newMod]) << newModNeg)), elementSize));
+                                 ((b2[j - 1] & negMasks[newMod]) << newModNeg)), elementSize));*/
                 res[it] =
                         res[it] ^
                         (((b2[j] & masks[newMod]) >> newMod) + ((b2[j - 1] & negMasks[newMod]) << newModNeg));
 
-/*for (int z = 0; z < m; z++) {
+                /*for (int z = 0; z < m; z++) {
                     printf("%s ", toBinary(res[z], elementSize));
                 }
                 printf("\n");*/
@@ -342,21 +370,6 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                         (((b2[j] & masks[newMod]) >> newMod) + ((b2[j - 1] & negMasks[newMod]) << newModNeg));
                 it++;
             }
-            printf("it=%d\n", it);
-
-
-
-            /*for (int z = 0; z < m; z++) {
-                printf("%s ", toBinary(res[z], elementSize));
-            }
-            printf("\n");
-*/
-            // todo подумать что будет с окончаниями элементов
-
-
-            /*unsigned short temp3 = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & negMasks[modGNeg]) << modG);
-
-            res[it] = res[it] ^ temp3;*/
         }
     }
 
@@ -375,7 +388,6 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
     }
     printf("\n");*/
 
-    b2[m - 1] = tempSaveLastElement;
 
 }
 
@@ -385,18 +397,29 @@ void decompressArray(unsigned short M, unsigned short m, unsigned short *arrTo, 
     unsigned short temp = arrFrom[m - 1];
     unsigned short mod = M % elementSize;
     temp = temp >> (elementSize - (M % elementSize)) % elementSize;
-    //обработка последнего элемента массива
-    for (int i = 0; i < mod; i++) {
-        arrTo[it--] = temp & 1;
-        temp = temp >> 1;
-    }
 
-    //обработка основной части элементов
-    for (int i = m - 2; i >= 0; i--) {
-        temp = arrFrom[i];
-        for (int j = 0; j < elementSize; j++) {
+    if (mod == 0) {
+        for (int i = m - 1; i >= 0; i--) {
+            temp = arrFrom[i];
+            for (int j = 0; j < elementSize; j++) {
+                arrTo[it--] = temp & 1;
+                temp = temp >> 1;
+            }
+        }
+    } else {
+        //обработка последнего элемента массива
+        for (int i = 0; i < mod; i++) {
             arrTo[it--] = temp & 1;
             temp = temp >> 1;
+        }
+
+        //обработка основной части элементов
+        for (int i = m - 2; i >= 0; i--) {
+            temp = arrFrom[i];
+            for (int j = 0; j < elementSize; j++) {
+                arrTo[it--] = temp & 1;
+                temp = temp >> 1;
+            }
         }
     }
 
@@ -407,6 +430,7 @@ int compare(unsigned short n, unsigned short *arr1, unsigned short m, unsigned s
     decompressArray(n, m, arr2Decompressed, arr2);
     for (int i = 0; i < n; i++) {
         if (arr1[i] != arr2Decompressed[i]) {
+            printf("error in %d\n", i);
             return 0;
         }
     }
@@ -628,6 +652,16 @@ int main3() {
     for (int i = 0; i < eLength; i++)
         e2[e2Compact[i]] = 1;
 
+    unsigned short e1Compressed[m];
+    unsigned short e2Compressed[m];
+    for(int i = 0;i<m;i++)
+    {
+        e1Compressed[i]=e2Compressed[i]=0;
+    }
+
+    createDenseArray(e1Compressed,m,e1,n);
+    createDenseArray(e2Compressed,m,e2,n);
+
     unsigned short c1[m];
     unsigned short c2[m];
     unsigned short s[m];
@@ -642,15 +676,27 @@ int main3() {
         c1_2[i] = c2_2[i] = 0;
     }
 
-    calculateSparseAndUsual2(n, hLength, m, h1Compact, e1Compact, c1);
+    calculateSparseAndUsual2(n, hLength, m, h1Compact, e1Compressed, c1);
     computationF2(n, hLength, h1Compact, e1, c1_2);
 
     if (!compare(n, c1_2, m, c1)) {
         printf("not Equal\n");
+        for (int i = 0; i < 10; i++) {
+            printf("%s ", toBinary(c1[i], elementSize));
+
+        }
+        printf("\n");
+
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 16; j++)
+                printf("%d", c1_2[i * 16 + j]);
+            printf(" ");
+        }
+        printf("\n");
     }
 
 
-    calculateSparseAndUsual2(n, hLength, m, h2Compact, e2Compact, c2);
+    calculateSparseAndUsual2(n, hLength, m, h2Compact, e2Compressed, c2);
     computationF2(n, hLength, h2Compact, e2, c2_2);
     if (!compare(n, c2_2, m, c2)) {
         printf("not Equal\n");
@@ -747,16 +793,111 @@ int main3() {
     return 0;
 }
 
+int mainSushkoTest() {
+    srand(time(0));
+
+    unsigned short masks[elementSize];
+    masks[0] = 1 << (elementSize - 1);
+    for (int i = 1; i < elementSize; i++)
+        masks[i] = masks[i - 1] >> 1;
+
+    /**|e1| + |e2| <= t
+     * |e1| = |e2| - не обязательно
+     *
+     * Для примера
+     * n = 4801
+     * |h1| = |h2| = 45
+     * |e1| + |e2| = 84
+     * T = 45/2+4*/
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+
+    unsigned short n = 4801;
+
+    unsigned short m = (n + elementSize - 1) / elementSize;
+
+    /**компактное хранение h1*/
+    unsigned short h1Compact[hLength];
+
+
+    /**компактное хранение h1 в обратном порядке*/
+    unsigned short h1TransCompact[hLength];
+
+
+    /**компактное хранение e1*/
+    unsigned short e1Compact[eLength];
+
+
+    /**заполняем вектора данными*/
+    generateSparseArray(h1Compact, n, hLength);
+    generateSparseArray(e1Compact, n, eLength);
+
+
+    for (int i = 0; i < hLength; i++) {
+        h1TransCompact[i] = n - h1Compact[i];
+    }
+
+    unsigned short e1[n];
+    for (int i = 0; i < n; i++)
+        e1[i] = 0;
+    for (int i = 0; i < eLength; i++)
+        e1[e1Compact[i]] = 1;
+
+    unsigned short e1Compressed[m];
+
+    createDenseArray(e1Compressed, m, e1, n);
+    //decompressArray(n,m,e1,e1Compact);
+
+    unsigned short c1[m];
+    for (int i = 0; i < m; i++) {
+        c1[i] = 0;
+    }
+
+    //нужны для сравнения
+    unsigned short c1_2[n];
+    unsigned short c2_2[n];
+    for (int i = 0; i < n; i++) {
+        c1_2[i] = c2_2[i] = 0;
+    }
+
+    /*for (int i = 0; i < m; i++) {
+        printf("%s ", toBinary(e1Compressed[i], elementSize));
+    }
+    printf("\n");*/
+
+    calculateSparseAndUsual2(n, hLength, m, h1Compact, e1Compressed, c1);
+    computationF2(n, hLength, h1Compact, e1, c1_2);
+
+    if (!compare(n, c1_2, m, c1)) {
+        printf("not Equal\n");
+        for (int i = 0; i < m; i++) {
+            printf("%s ", toBinary(c1[i], elementSize));
+
+        }
+        printf("\n");
+
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < 16; j++)
+                printf("%d", c1_2[i * 16 + j]);
+            printf(" ");
+        }
+        printf("\n");
+    }
+
+
+    return 0;
+}
+
 int main() {
 
 
     srand(time(0));
 
 
-    unsigned short M = 67;
+    /*unsigned short M = 67;
     unsigned short m = (M + elementSize - 1) / elementSize;
-    const unsigned short arrSize = 1;
-    unsigned short inda[1] = {63};
+    const unsigned short arrSize = 7;
+    unsigned short inda[7] = {1,5,17,32,35,64,66};
     unsigned short b[M];
     unsigned short c2[M];
     for (int i = 0; i < M; i++) {
@@ -792,12 +933,14 @@ int main() {
         printf("%d", c2[i]);
     }
     printf("\n");
-    printf("equal = %d\n", compare(M, c2, m, c));
+    printf("equal = %d\n", compare(M, c2, m, c));*/
 
-    //main3();
+    main3();
     /*for (int i = 0; i < 1000; i++)
         main2();
     return 0;*/
+
+    //mainSushkoTest();
 }
 
 
