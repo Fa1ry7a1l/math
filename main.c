@@ -583,14 +583,17 @@ int main2() {
     return 0;
 }
 
-int main3() {
-
+void main4() {
     srand(time(0));
 
     unsigned short masks[elementSize];
     masks[0] = 1 << (elementSize - 1);
     for (int i = 1; i < elementSize; i++)
         masks[i] = masks[i - 1] >> 1;
+
+    /*for(int i = 0;i<elementSize;i++)
+        printf("%s\n", toBinary(masks[i],elementSize));*/
+
 
     /**|e1| + |e2| <= t
      * |e1| = |e2| - не обязательно
@@ -625,18 +628,25 @@ int main3() {
     /**компактное хранение h2 в обратном порядке*/
     unsigned short h2TransCompact[hLength];
 
+    for (int i = 0; i < hLength; i++) {
+        h1Compact[i] = h2Compact[i] = h1TransCompact[i] = h2TransCompact[i] = 0;
+    }
+
     /**компактное хранение e1*/
     unsigned short e1Compact[eLength];
 
     /**компактное хранение e2*/
     unsigned short e2Compact[eLength];
 
+    for (int i = 0; i < eLength; i++) {
+        e1Compact[i] = e2Compact[i] = 0;
+    }
+
     /**заполняем вектора данными*/
     generateSparseArray(h1Compact, n, hLength);
     generateSparseArray(h2Compact, n, hLength);
     generateSparseArray(e1Compact, n, eLength);
     generateSparseArray(e2Compact, n, eLength);
-
 
     for (int i = 0; i < hLength; i++) {
         h1TransCompact[i] = n - h1Compact[i];
@@ -654,13 +664,13 @@ int main3() {
 
     unsigned short e1Compressed[m];
     unsigned short e2Compressed[m];
-    for(int i = 0;i<m;i++)
-    {
-        e1Compressed[i]=e2Compressed[i]=0;
+
+    for (int i = 0; i < m; i++) {
+        e1Compressed[i] = e2Compressed[i] = 0;
     }
 
-    createDenseArray(e1Compressed,m,e1,n);
-    createDenseArray(e2Compressed,m,e2,n);
+    createDenseArray(e1Compressed, m, e1, n);
+    createDenseArray(e2Compressed, m, e2, n);
 
     unsigned short c1[m];
     unsigned short c2[m];
@@ -669,50 +679,34 @@ int main3() {
         c1[i] = c2[i] = s[i] = 0;
     }
 
-    //нужны для сравнения
-    unsigned short c1_2[n];
-    unsigned short c2_2[n];
+    unsigned short c1Test[n];
+    unsigned short c2Test[n];
     for (int i = 0; i < n; i++) {
-        c1_2[i] = c2_2[i] = 0;
+        c1Test[i] = c2Test[i] = 0;
     }
 
     calculateSparseAndUsual2(n, hLength, m, h1Compact, e1Compressed, c1);
-    computationF2(n, hLength, h1Compact, e1, c1_2);
+    computationF2(n, hLength, h1Compact, e1, c1Test);
 
-    if (!compare(n, c1_2, m, c1)) {
-        printf("not Equal\n");
-        for (int i = 0; i < 10; i++) {
-            printf("%s ", toBinary(c1[i], elementSize));
-
-        }
-        printf("\n");
-
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 16; j++)
-                printf("%d", c1_2[i * 16 + j]);
-            printf(" ");
-        }
-        printf("\n");
+    if (!compare(n, c1Test, m, c1)) {
+        printf("not equal\n");
     }
-
 
     calculateSparseAndUsual2(n, hLength, m, h2Compact, e2Compressed, c2);
-    computationF2(n, hLength, h2Compact, e2, c2_2);
-    if (!compare(n, c2_2, m, c2)) {
-        printf("not Equal\n");
+    computationF2(n, hLength, h2Compact, e2, c2Test);
+
+    if (!compare(n, c2Test, m, c2)) {
+        printf("not equal\n");
     }
 
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < m; i++) {
         s[i] = c1[i] ^ c2[i];
     }
 
     /**посчитали S*/
-    /*for (int i = 0; i < 150; i++)
-        printf("%d", s[i]);
-    printf("\n");*/
     printf("s calculated\n");
 
-    unsigned short u_2[n], v_2[n];
+
     unsigned short u[m], v[m];
     for (int i = 0; i < m; i++)
         u[i] = v[i] = 0;
@@ -726,52 +720,82 @@ int main3() {
         unsigned short upc1[n], upc2[n];
         for (int i = 0; i < n; i++)
             upc1[i] = upc2[i] = 0;
+
         unsigned short sTempDecompressed[n];
+        for (int i = 0; i < n; i++)
+            sTempDecompressed[i] = 0;
 
         decompressArray(n, m, sTempDecompressed, sTemp);
 
         computationZ(n, hLength, h1TransCompact, sTempDecompressed, upc1);
         computationZ(n, hLength, h2TransCompact, sTempDecompressed, upc2);
 
-        /**тут пойдут изменения для u и v*/
+        unsigned short vTemp[n];
+        unsigned short uTemp[n];
+        for (int i = 0; i < n; i++) {
+            vTemp[i] = uTemp[i] = 0;
+        }
+
+        decompressArray(n, m, vTemp, v);
+        decompressArray(n, m, uTemp, u);
+
+        //todo ошибка в подсчете изменения
         for (int j = 0; j < n; j++) {
-            if (upc1[j] >= T)
+            if (upc1[j] >= T) {
                 u[j / elementSize] = u[j / elementSize] ^ masks[j % elementSize];
-            if (upc2[j] >= T)
+                uTemp[j] = uTemp[j] ^ 1;
+            }
+
+            if (upc2[j] >= T) {
                 v[j / elementSize] = v[j / elementSize] ^ masks[j % elementSize];
+                vTemp[j] = vTemp[j] ^ 1;
+            }
+
+        }
+
+        if(!compare(n,uTemp,m,u))
+        {
+            printf("error u\n");
+        }
+
+        if(!compare(n,vTemp,m,v))
+        {
+            printf("error v\n");
         }
 
         for (int i = 0; i < m; i++) {
             sTemp[i] = c1[i] = c2[i] = 0;
         }
+
         for (int i = 0; i < n; i++) {
-            c1_2[i] = c2_2[i] = 0;
+            c1Test[i] = c2Test[i] = 0;
         }
 
-        decompressArray(n, m, u_2, u);
-        decompressArray(n, m, v_2, v);
 
+        decompressArray(n, m, vTemp, v);
+        decompressArray(n, m, uTemp, u);
 
         calculateSparseAndUsual2(n, hLength, m, h1Compact, u, c1);
-        computationF2(n, hLength, h1Compact, u_2, c1_2);
-
-        if (!compare(n, c1_2, m, c1)) {
-            printf("not Equal\n");
+        computationF2(n, hLength, h1Compact, uTemp, c1Test);
+        if (!compare(n, c1Test, m, c1)) {
+            printf("not equal\n");
         }
+
 
         calculateSparseAndUsual2(n, hLength, m, h2Compact, v, c2);
-        computationF2(n, hLength, h2Compact, v_2, c2_2);
+        computationF2(n, hLength, h2Compact, vTemp, c2Test);
 
-        if (!compare(n, c2_2, m, c2)) {
-            printf("not Equal\n");
+        if (!compare(n, c2Test, m, c2)) {
+            printf("not equal\n");
         }
 
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < m; i++) {
             sTemp[i] = s[i] ^ c1[i] ^ c2[i];
         }
 
         /**проверка s` на ноль*/
         flag = 0;
+        exitFlag = 0;
         for (int i = 0; i < m; i++) {
             if (sTemp[i] != 0) {
                 flag = 1;
@@ -787,10 +811,10 @@ int main3() {
 
     if (exitFlag) {
         printf("success\n");
+
     } else {
         printf("fail\n");
     }
-    return 0;
 }
 
 int mainSushkoTest() {
@@ -935,10 +959,12 @@ int main() {
     printf("\n");
     printf("equal = %d\n", compare(M, c2, m, c));*/
 
-    main3();
+    //main3();
+    main4();
+
     /*for (int i = 0; i < 1000; i++)
         main2();
-    return 0;*/
+    */
 
     //mainSushkoTest();
 }
