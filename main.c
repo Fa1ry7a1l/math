@@ -817,100 +817,7 @@ void main4() {
     }
 }
 
-int mainSushkoTest() {
-    srand(time(0));
 
-    unsigned short masks[elementSize];
-    masks[0] = 1 << (elementSize - 1);
-    for (int i = 1; i < elementSize; i++)
-        masks[i] = masks[i - 1] >> 1;
-
-    /**|e1| + |e2| <= t
-     * |e1| = |e2| - не обязательно
-     *
-     * Для примера
-     * n = 4801
-     * |h1| = |h2| = 45
-     * |e1| + |e2| = 84
-     * T = 45/2+4*/
-    unsigned short hLength = 45;
-    unsigned short eLength = 42;
-
-    unsigned short n = 4801;
-
-    unsigned short m = (n + elementSize - 1) / elementSize;
-
-    /**компактное хранение h1*/
-    unsigned short h1Compact[hLength];
-
-
-    /**компактное хранение h1 в обратном порядке*/
-    unsigned short h1TransCompact[hLength];
-
-
-    /**компактное хранение e1*/
-    unsigned short e1Compact[eLength];
-
-
-    /**заполняем вектора данными*/
-    generateSparseArray(h1Compact, n, hLength);
-    generateSparseArray(e1Compact, n, eLength);
-
-
-    for (int i = 0; i < hLength; i++) {
-        h1TransCompact[i] = n - h1Compact[i];
-    }
-
-    unsigned short e1[n];
-    for (int i = 0; i < n; i++)
-        e1[i] = 0;
-    for (int i = 0; i < eLength; i++)
-        e1[e1Compact[i]] = 1;
-
-    unsigned short e1Compressed[m];
-
-    createDenseArray(e1Compressed, m, e1, n);
-    //decompressArray(n,m,e1,e1Compact);
-
-    unsigned short c1[m];
-    for (int i = 0; i < m; i++) {
-        c1[i] = 0;
-    }
-
-    //нужны для сравнения
-    unsigned short c1_2[n];
-    unsigned short c2_2[n];
-    for (int i = 0; i < n; i++) {
-        c1_2[i] = c2_2[i] = 0;
-    }
-
-    /*for (int i = 0; i < m; i++) {
-        printf("%s ", toBinary(e1Compressed[i], elementSize));
-    }
-    printf("\n");*/
-
-    calculateSparseAndUsual2(n, hLength, m, h1Compact, e1Compressed, c1);
-    computationF2(n, hLength, h1Compact, e1, c1_2);
-
-    if (!compare(n, c1_2, m, c1)) {
-        printf("not Equal\n");
-        for (int i = 0; i < m; i++) {
-            printf("%s ", toBinary(c1[i], elementSize));
-
-        }
-        printf("\n");
-
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < 16; j++)
-                printf("%d", c1_2[i * 16 + j]);
-            printf(" ");
-        }
-        printf("\n");
-    }
-
-
-    return 0;
-}
 
 int main() {
 
@@ -966,7 +873,6 @@ int main() {
         main2();
     */
 
-    //mainSushkoTest();
 }
 
 
