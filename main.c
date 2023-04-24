@@ -1503,7 +1503,7 @@ my_computationF2(unsigned short M, int arrSize, const unsigned short *inda, cons
     //printf("begin computation\n");
     int j;
     int new_j;
-    for (unsigned short* i=inda; i != inda + arrSize; i++) {
+    for (unsigned short *i = inda; i != inda + arrSize; i++) {
         j = 0;
         new_j = M - *i + j;
         for (; j < *i; j++) {
@@ -1516,10 +1516,8 @@ my_computationF2(unsigned short M, int arrSize, const unsigned short *inda, cons
             new_j++;
         }
     }
-
-void
-computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
 }
+
 void computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
     for (int i = 0; i < arrSize; i++) {
         for (int j = 0; j < M; j++) {
