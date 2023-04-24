@@ -587,9 +587,6 @@ void main4() {
     srand(time(0));
 
     unsigned short masks[elementSize];
-    masks[0] = 1 << (elementSize - 1);
-    for (int i = 1; i < elementSize; i++)
-        masks[i] = masks[i - 1] >> 1;
 
     /*for(int i = 0;i<elementSize;i++)
         printf("%s\n", toBinary(masks[i],elementSize));*/
@@ -628,15 +625,42 @@ void main4() {
     /**компактное хранение h2 в обратном порядке*/
     unsigned short h2TransCompact[hLength];
 
-    for (int i = 0; i < hLength; i++) {
-        h1Compact[i] = h2Compact[i] = h1TransCompact[i] = h2TransCompact[i] = 0;
-    }
+
 
     /**компактное хранение e1*/
     unsigned short e1Compact[eLength];
 
     /**компактное хранение e2*/
     unsigned short e2Compact[eLength];
+
+
+    unsigned short e1[n];
+    unsigned short e2[n];
+
+    unsigned short e1Compressed[m];
+    unsigned short e2Compressed[m];
+
+    unsigned short c1[m];
+    unsigned short c2[m];
+    unsigned short s[m];
+
+    unsigned short u[m], v[m];
+
+    unsigned short sTemp[m];
+    unsigned short upc1[n], upc2[n];
+    unsigned short sTempDecompressed[n];
+
+
+    /**Конец инициализации*/
+
+
+    masks[0] = 1 << (elementSize - 1);
+    for (int i = 1; i < elementSize; i++)
+        masks[i] = masks[i - 1] >> 1;
+
+    for (int i = 0; i < hLength; i++) {
+        h1Compact[i] = h2Compact[i] = h1TransCompact[i] = h2TransCompact[i] = 0;
+    }
 
     for (int i = 0; i < eLength; i++) {
         e1Compact[i] = e2Compact[i] = 0;
@@ -653,17 +677,15 @@ void main4() {
         h2TransCompact[i] = n - h2Compact[i];
     }
 
-    unsigned short e1[n];
-    unsigned short e2[n];
+
     for (int i = 0; i < n; i++)
         e1[i] = e2[i] = 0;
+
     for (int i = 0; i < eLength; i++)
         e1[e1Compact[i]] = 1;
     for (int i = 0; i < eLength; i++)
         e2[e2Compact[i]] = 1;
 
-    unsigned short e1Compressed[m];
-    unsigned short e2Compressed[m];
 
     for (int i = 0; i < m; i++) {
         e1Compressed[i] = e2Compressed[i] = 0;
@@ -672,9 +694,7 @@ void main4() {
     createDenseArray(e1Compressed, m, e1, n);
     createDenseArray(e2Compressed, m, e2, n);
 
-    unsigned short c1[m];
-    unsigned short c2[m];
-    unsigned short s[m];
+
     for (int i = 0; i < m; i++) {
         c1[i] = c2[i] = s[i] = 0;
     }
@@ -704,24 +724,21 @@ void main4() {
     }
 
     /**посчитали S*/
-    printf("s calculated\n");
+    //printf("s calculated\n");
 
 
-    unsigned short u[m], v[m];
+
     for (int i = 0; i < m; i++)
         u[i] = v[i] = 0;
 
-    unsigned short sTemp[m];
     for (int i = 0; i < m; i++) {
         sTemp[i] = s[i];
     }
 
     for (int z = 0; z < num_it; z++) {
-        unsigned short upc1[n], upc2[n];
         for (int i = 0; i < n; i++)
             upc1[i] = upc2[i] = 0;
 
-        unsigned short sTempDecompressed[n];
         for (int i = 0; i < n; i++)
             sTempDecompressed[i] = 0;
 
@@ -818,7 +835,6 @@ void main4() {
 }
 
 
-
 int main() {
 
 
@@ -867,7 +883,9 @@ int main() {
     printf("equal = %d\n", compare(M, c2, m, c));*/
 
     //main3();
-    main4();
+
+    for (int i = 0; i < 1000; i++)
+        main4();
 
     /*for (int i = 0; i < 1000; i++)
         main2();
