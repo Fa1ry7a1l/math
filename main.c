@@ -7,23 +7,27 @@
 
 #define elementSize 16
 
-unsigned short* mainMasks;
-unsigned short* denseArrayFromCompactMasks;
-unsigned short* calculateSparseAndUsual2Masks;
-unsigned short* calculateSparseAndUsual2NegMasks;
-
+unsigned short *mainMasks;
+unsigned short *denseArrayFromCompactMasks;
+unsigned short *calculateSparseAndUsual2Masks;
+unsigned short *calculateSparseAndUsual2NegMasks;
 
 
 int my_random_seed = 0;
 
 void
-my_computationZb(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) ;
+my_computationZb(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+
 void
 my_computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+
 void
 my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+
 void
-my_computationZ_last(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+my_computationZ_last(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b,
+                     unsigned short *c);
+
 /**стандартная свертка разреженного и не разреженного векторов F2
  * M - длина неразреженного вектора
  * arrSize - количество ненулевых элементов резреженного вектора
@@ -56,16 +60,24 @@ char *toBinary(unsigned short n, int len) {
 
 /**генерирует разреженный массив, как массив индексов ненулевых элементов, упорядоченных в порядке возрастания.
  * arr - результирующий вектор индексов
- * m - максимальный индекс в векторе
- * res - количество элементов в результирующем векторе
+ * M - максимальный индекс в векторе
+ * resSize - количество элементов в результирующем векторе
  * */
-void generateSparseArray(unsigned short *arr, int m, unsigned short resSize) {
+void generateSparseArray(unsigned short *arr, int M, unsigned short resSize) {
     unsigned short i = 0;
-    unsigned short a = 0;
-    while (i < resSize && a < m) {
-        unsigned int c = rand();
-        a = a + (c % ((m - a) / (resSize - i)));
-        arr[i++] = a++;
+    int flag;
+    while (i < resSize) {
+        unsigned int c = rand() % M;
+
+        flag = 1;
+        for (int j = 0; j < i; j++) {
+            if (arr[i] == c) {
+                flag = 0;
+                break;
+            }
+        }
+        if (flag)
+            arr[i++] = c;
     }
 }
 
@@ -95,9 +107,8 @@ void createDenseArray(unsigned short *res, int resSize, const unsigned short *do
 }
 
 void createDenseArrayFromCompact(unsigned short *res, int resSize, const unsigned short *donor, int donorSize) {
-    for(int i = 0;i<donorSize;i++)
-    {
-        res[donor[i]/elementSize]+=denseArrayFromCompactMasks[donor[i] % elementSize];
+    for (int i = 0; i < donorSize; i++) {
+        res[donor[i] / elementSize] += denseArrayFromCompactMasks[donor[i] % elementSize];
     }
 }
 
@@ -129,12 +140,12 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                 unsigned short modNeg = (elementSize - mod) % elementSize;
 
 
-
                 res[0] = res[0] ^ (b2[0] & calculateSparseAndUsual2Masks[mod]) >> mod;
 
                 unsigned short it = 1;
                 for (int j = 1; j < m - 1; j++) {
-                    res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
+                    res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) +
+                                         ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
                     it++;
                 }
 
@@ -143,7 +154,8 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                 res[it] = res[it] ^ temp2;
 
 
-                unsigned short temp3 = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
+                unsigned short temp3 =
+                        (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
                 unsigned short temp4 = (temp3 & calculateSparseAndUsual2NegMasks[mod]) << modNeg;
                 res[0] = res[0] ^ temp4;
             }
@@ -152,7 +164,8 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
 
 
             /**for по элементам, которые больше elementSize*/
-            unsigned short lastElementShifted = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
+            unsigned short lastElementShifted =
+                    (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
 
             for (; i < arrSize; i++) {
                 unsigned short mod = inda[i] % elementSize;
@@ -160,12 +173,14 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                 unsigned short start = inda[i] / elementSize;
 
                 res[start] =
-                        res[start] ^ (((b2[0] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((lastElementShifted & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
+                        res[start] ^ (((b2[0] & calculateSparseAndUsual2Masks[mod]) >> mod) +
+                                      ((lastElementShifted & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
 
                 unsigned short it = start + 1;
                 int j = 1;
                 for (; it < m; it++, j++) {
-                    res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
+                    res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) +
+                                         ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
                 }
                 j--;
 
@@ -187,13 +202,15 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                 for (; j < m - 1; j++, it++) {
                     res[it] =
                             res[it] ^
-                            (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
+                            (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) +
+                             ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
                 }
 
                 if (flag) {
                     res[it] =
                             res[it] ^
-                            (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
+                            (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) +
+                             ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
                     it++;
                 }
             }
@@ -208,7 +225,8 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
 
                 unsigned short it = 1;
                 for (int j = 1; j < m - 1; j++) {
-                    res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
+                    res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) +
+                                         ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
                     it++;
                 }
 
@@ -216,7 +234,8 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                 temp2 = ((b2[m - 1] >> mod) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
                 res[it] = res[it] ^ temp2;
 
-                unsigned short temp3 = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
+                unsigned short temp3 =
+                        (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
                 unsigned short temp4 = (temp3 & calculateSparseAndUsual2NegMasks[mod]) << modNeg;
                 res[0] = res[0] ^ temp4;
             }
@@ -224,7 +243,8 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
         }
     } else {
 
-        unsigned short lastElementShifted = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
+        unsigned short lastElementShifted =
+                (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
         for (int i = 0; i < arrSize; i++) {
             unsigned short mod = inda[i] % elementSize;
             unsigned short modNeg = (elementSize - mod) % elementSize;
@@ -232,12 +252,14 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
 
 
             res[start] =
-                    res[start] ^ (((b2[0] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((lastElementShifted & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
+                    res[start] ^ (((b2[0] & calculateSparseAndUsual2Masks[mod]) >> mod) +
+                                  ((lastElementShifted & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
 
             unsigned short it = start + 1;
             int j = 1;
             for (; it < m; it++, j++) {
-                res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
+                res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) +
+                                     ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
             }
             j--;
 
@@ -256,13 +278,15 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
             for (; j < m - 1; j++, it++) {
                 res[it] =
                         res[it] ^
-                        (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
+                        (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) +
+                         ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
             }
 
             if (flag) {
                 res[it] =
                         res[it] ^
-                        (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
+                        (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) +
+                         ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
                 it++;
             }
         }
@@ -271,6 +295,7 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
 
     /* обрезка вектора тут не к чему, но создаст потенциально проблемы в скорости*/
 }
+
 int main_glukhikh() {
 
     srand(2);
@@ -314,10 +339,10 @@ int main_glukhikh() {
     double time_spent = 0;
     unsigned short u[n], v[n];
     unsigned short upc1[n], upc2[n];
-    float suc = 0,faili = 0;
+    float suc = 0, faili = 0;
     /**компактное хранение e2*/
     unsigned short e2Compact[eLength];
-    for(int asd = 0;asd < epoh;asd++) {
+    for (int asd = 0; asd < epoh; asd++) {
 
         clock_t begin = clock();
         for (int i = 0; i < hLength; i++) {
@@ -430,11 +455,11 @@ int main_glukhikh() {
     printf("last mod\n");
     printf("The elapsed time is %f seconds\n", time_spent);
     printf("One run is %f seconds\n", (time_spent / epoh));
-    printf("%f \n",100.0 * suc/(faili + suc));
+    printf("%f \n", 100.0 * suc / (faili + suc));
     return 0;
 }
-int main_glukhikh_optimaz(long long seed)
-{
+
+int main_glukhikh_optimaz(long long seed) {
     srand(seed);
     int epoh = 1000;
     /**|e1| + |e2| <= t
@@ -476,10 +501,10 @@ int main_glukhikh_optimaz(long long seed)
     double time_spent = 0;
     unsigned short u[n], v[n];
     unsigned short upc1[n], upc2[n];
-    float suc = 0,faili = 0;
+    float suc = 0, faili = 0;
     /**компактное хранение e2*/
     unsigned short e2Compact[eLength];
-    for(int asd = 0;asd < epoh;asd++) {
+    for (int asd = 0; asd < epoh; asd++) {
 
         clock_t begin = clock();
         for (int i = 0; i < hLength; i++) {
@@ -592,11 +617,11 @@ int main_glukhikh_optimaz(long long seed)
     printf("My mod\n");
     printf("The elapsed time is %f seconds\n", time_spent);
     printf("One run is %f seconds\n", (time_spent / epoh));
-    printf("%f \n",100.0 * suc/(faili + suc));
+    printf("%f \n", 100.0 * suc / (faili + suc));
     return 0;
 }
-int main_glukhikh_old_optimaz()
-{
+
+int main_glukhikh_old_optimaz() {
     srand(time(0));
     int epoh = 1000;
     /**|e1| + |e2| <= t
@@ -638,10 +663,10 @@ int main_glukhikh_old_optimaz()
     double time_spent = 0;
     unsigned short u[n], v[n];
     unsigned short upc1[n], upc2[n];
-    float suc = 0,faili = 0;
+    float suc = 0, faili = 0;
     /**компактное хранение e2*/
     unsigned short e2Compact[eLength];
-    for(int asd = 0;asd < epoh;asd++) {
+    for (int asd = 0; asd < epoh; asd++) {
 
         clock_t begin = clock();
         for (int i = 0; i < hLength; i++) {
@@ -754,11 +779,11 @@ int main_glukhikh_old_optimaz()
     printf("My mod\n");
     printf("The elapsed time is %f seconds\n", time_spent);
     printf("One run is %f seconds\n", (time_spent / epoh));
-    printf("%f \n",100.0 * suc/(faili + suc));
+    printf("%f \n", 100.0 * suc / (faili + suc));
     return 0;
 }
-int main_glukhikh_not_optimaz()
-{
+
+int main_glukhikh_not_optimaz() {
     srand(time(0));
     int epoh = 10000;
     /**|e1| + |e2| <= t
@@ -800,10 +825,10 @@ int main_glukhikh_not_optimaz()
     double time_spent = 0;
     unsigned short u[n], v[n];
     unsigned short upc1[n], upc2[n];
-    float suc = 0,faili = 0;
+    float suc = 0, faili = 0;
     /**компактное хранение e2*/
     unsigned short e2Compact[eLength];
-    for(int asd = 0;asd < epoh ;asd++) {
+    for (int asd = 0; asd < epoh; asd++) {
 
         clock_t begin = clock();
         for (int i = 0; i < hLength; i++) {
@@ -915,8 +940,8 @@ int main_glukhikh_not_optimaz()
 
     printf("default\n");
     printf("The elapsed time is %f seconds\n", time_spent);
-    printf("One run is %f seconds\n", (time_spent / epoh ));
-    printf("%f \n",100.0 * suc/(faili + suc));
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n", 100.0 * suc / (faili + suc));
     return 0;
 }
 
@@ -1112,8 +1137,8 @@ int main2() {
     return 0;
 }
 
-int main3() {
-    srand(2);
+int main3(long long seed) {
+    srand(seed);
 
     unsigned short epoh = 1000;
 
@@ -1167,12 +1192,13 @@ int main3() {
     unsigned short sTemp[n];
     unsigned short upc1[n], upc2[n];
 
-    float suc = 0,fail = 0;
+    float suc = 0, fail = 0;
 
     double time_spent = 0;
 
-    for(int ast = 0;ast<epoh;ast++)
-    {
+    for (int ast = 0; ast < epoh; ast++) {
+        //todo отметим что srand стоит проводить каждый раз
+        srand(time(0));
         clock_t begin = clock();
 
         for (int i = 0; i < hLength; i++) {
@@ -1275,7 +1301,7 @@ int main3() {
     printf("last mod\n");
     printf("The elapsed time is %f seconds\n", time_spent);
     printf("One run is %f seconds\n", (time_spent / epoh));
-    printf("%f \n",100.0 * suc/(fail + suc));
+    printf("%f \n", 100.0 * suc / (fail + suc));
 
     return 0;
 }
@@ -1342,14 +1368,12 @@ void main4(long long seed) {
 
 
     /**Конец объявления*/
-    float suc = 0,fail = 0;
+    float suc = 0, fail = 0;
 
     double time_spent = 0;
 
 
-
-    for(int asd = 0;asd<epoh;asd++)
-    {
+    for (int asd = 0; asd < epoh; asd++) {
         clock_t begin = clock();
 
         for (int i = 0; i < hLength; i++) {
@@ -1375,8 +1399,8 @@ void main4(long long seed) {
             e1Compressed[i] = e2Compressed[i] = 0;
         }
 
-        createDenseArrayFromCompact(e1Compressed,m,e1Compact,eLength);
-        createDenseArrayFromCompact(e2Compressed,m,e2Compact,eLength);
+        createDenseArrayFromCompact(e1Compressed, m, e1Compact, eLength);
+        createDenseArrayFromCompact(e2Compressed, m, e2Compact, eLength);
 
         for (int i = 0; i < m; i++) {
             c1[i] = c2[i] = s[i] = 0;
@@ -1470,7 +1494,7 @@ void main4(long long seed) {
     printf("last mod\n");
     printf("The elapsed time is %f seconds\n", time_spent);
     printf("One run is %f seconds\n", (time_spent / epoh));
-    printf("%f \n",100.0 * suc/(fail + suc));
+    printf("%f \n", 100.0 * suc / (fail + suc));
 }
 
 
@@ -1478,19 +1502,18 @@ int main() {
     long long seed = time(0);
 
     /*начало блока инициализации*/
-    mainMasks = calloc(elementSize, sizeof(unsigned short ));
+    mainMasks = calloc(elementSize, sizeof(unsigned short));
     mainMasks[0] = 1 << (elementSize - 1);
     for (int i = 1; i < elementSize; i++)
         mainMasks[i] = mainMasks[i - 1] >> 1;
-    denseArrayFromCompactMasks = calloc(elementSize, sizeof(unsigned short ));
+    denseArrayFromCompactMasks = calloc(elementSize, sizeof(unsigned short));
     denseArrayFromCompactMasks[elementSize - 1] = 1;
-    for (int i = 0;i< elementSize-1;i++)
-    {
+    for (int i = 0; i < elementSize - 1; i++) {
         denseArrayFromCompactMasks[elementSize - 2 - i] = denseArrayFromCompactMasks[elementSize - 1 - i] << 1;
     }
 
-    calculateSparseAndUsual2Masks = calloc(elementSize,sizeof (unsigned short ));
-    calculateSparseAndUsual2NegMasks = calloc(elementSize,sizeof (unsigned short ));
+    calculateSparseAndUsual2Masks = calloc(elementSize, sizeof(unsigned short));
+    calculateSparseAndUsual2NegMasks = calloc(elementSize, sizeof(unsigned short));
     unsigned short temp = -1;
     for (int i = 0; i < elementSize; i++) {
         calculateSparseAndUsual2Masks[i] = temp;
@@ -1501,14 +1524,15 @@ int main() {
     /*конец блока инициализации*/
 
 
-    main4(seed);
-    //main3();
-    main_glukhikh_optimaz(seed);
+    //main4(seed);
+    //main_glukhikh_optimaz(seed);
+    main3(seed);
     return 0;
 }
 
 void
-my_computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
+my_computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b,
+                 unsigned short *c) {
     //printf("begin computation\n");
     int j;
     int new_j;
@@ -1527,7 +1551,8 @@ my_computationF2(unsigned short M, int arrSize, const unsigned short *inda, cons
     }
 }
 
-void computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
+void
+computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
     for (int i = 0; i < arrSize; i++) {
         for (int j = 0; j < M; j++) {
             c[j] = (c[j] + b[(j - inda[i] + M) % M]) % 2;
@@ -1543,25 +1568,27 @@ computationZ(unsigned short M, int arrSize, const unsigned short *inda, const un
         }
     }
 }
+
 void
-my_computationZ_last(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
+my_computationZ_last(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b,
+                     unsigned short *c) {
     //printf("begin computation\n");
     unsigned short *pointer_c;
     int j;
     int new_j;
-    unsigned short* end = inda + arrSize;
-    for (unsigned short* i=inda; i != end; i++) {
+    unsigned short *end = inda + arrSize;
+    for (unsigned short *i = inda; i != end; i++) {
         pointer_c = c;
         j = 0;
         new_j = M - *i;
         for (; j < *i; j++) {
-            *pointer_c= (*pointer_c + b[new_j]);
+            *pointer_c = (*pointer_c + b[new_j]);
             new_j++;
             pointer_c++;
         }
         new_j = j - *i;
         for (; j < M; j++) {
-            *pointer_c= (*pointer_c + b[new_j]);
+            *pointer_c = (*pointer_c + b[new_j]);
             new_j++;
             pointer_c++;
 
@@ -1569,6 +1596,7 @@ my_computationZ_last(unsigned short M, int arrSize, const unsigned short *inda, 
     }
 
 }
+
 void
 my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
     //printf("begin computation\n");
@@ -1576,56 +1604,53 @@ my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const
     int j;
     unsigned short new_j;
     unsigned short save_i;
-    unsigned short* end = inda + arrSize;
-    for (unsigned short* i=inda; i != end; i++) {
+    unsigned short *end = inda + arrSize;
+    for (unsigned short *i = inda; i != end; i++) {
 
         pointer_c = c;
         j = 0;
         new_j = M - *i;
         save_i = (*i) / 4;
-        for(;j < save_i;j++)
-        {
-            *pointer_c= (*pointer_c + b[new_j]);
-            new_j+=4;
+        for (; j < save_i; j++) {
+            *pointer_c = (*pointer_c + b[new_j]);
+            new_j += 4;
             pointer_c++;
-            *pointer_c= (*pointer_c + b[new_j-3]);
+            *pointer_c = (*pointer_c + b[new_j - 3]);
             pointer_c++;
-            *pointer_c= (*pointer_c + b[new_j-2]);
+            *pointer_c = (*pointer_c + b[new_j - 2]);
             pointer_c++;
-            *pointer_c= (*pointer_c + b[new_j-1]);
+            *pointer_c = (*pointer_c + b[new_j - 1]);
             pointer_c++;
         }
-        save_i= *i - save_i*4;
-        for(j = 0;j < save_i;j++)
-        {
-            *pointer_c= (*pointer_c + b[new_j]);
+        save_i = *i - save_i * 4;
+        for (j = 0; j < save_i; j++) {
+            *pointer_c = (*pointer_c + b[new_j]);
             new_j++;
             pointer_c++;
         }
         new_j = pointer_c - c - *i;
-        save_i = (M - *i) /4;
+        save_i = (M - *i) / 4;
         //printf("check %d , i - %d\n",check,*i);
-        for(j = 0;j < save_i;j++)
-        {
+        for (j = 0; j < save_i; j++) {
 
-            *pointer_c= (*pointer_c + b[new_j]);
-            new_j+=4;
-
-            pointer_c++;
-            *pointer_c= (*pointer_c + b[new_j-3]);
+            *pointer_c = (*pointer_c + b[new_j]);
+            new_j += 4;
 
             pointer_c++;
-            *pointer_c= (*pointer_c + b[new_j-2]);
+            *pointer_c = (*pointer_c + b[new_j - 3]);
 
             pointer_c++;
-            *pointer_c= (*pointer_c + b[new_j-1]);
+            *pointer_c = (*pointer_c + b[new_j - 2]);
+
+            pointer_c++;
+            *pointer_c = (*pointer_c + b[new_j - 1]);
 
             pointer_c++;
 
         }
-        save_i = (M - *i) - save_i*4;
-        for (j = 0; j< save_i; j++) {
-            *pointer_c= (*pointer_c + b[new_j]);
+        save_i = (M - *i) - save_i * 4;
+        for (j = 0; j < save_i; j++) {
+            *pointer_c = (*pointer_c + b[new_j]);
             new_j++;
             pointer_c++;
 
