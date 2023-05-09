@@ -7,6 +7,13 @@
 
 #define elementSize 16
 
+unsigned short* mainMasks;
+unsigned short* denseArrayFromCompactMasks;
+unsigned short* calculateSparseAndUsual2Masks;
+unsigned short* calculateSparseAndUsual2NegMasks;
+
+
+
 int my_random_seed = 0;
 
 void
@@ -87,6 +94,13 @@ void createDenseArray(unsigned short *res, int resSize, const unsigned short *do
 
 }
 
+void createDenseArrayFromCompact(unsigned short *res, int resSize, const unsigned short *donor, int donorSize) {
+    for(int i = 0;i<donorSize;i++)
+    {
+        res[donor[i]/elementSize]+=denseArrayFromCompactMasks[donor[i] % elementSize];
+    }
+}
+
 /**генерирует обычный массив (b)*/
 void generateDenseArray(unsigned short *arr, int m) {
     unsigned short temp = 0;
@@ -102,18 +116,11 @@ void generateDenseArray(unsigned short *arr, int m) {
 
 void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsigned short *inda, unsigned short *b2,
                               unsigned short *res) {
-    unsigned short masks[elementSize];
-    unsigned short negMasks[elementSize];
+
     unsigned short modG = M % elementSize;
     unsigned short modGNeg = (elementSize - modG) % elementSize;
-    unsigned short temp = -1;
 
 
-    for (int i = 0; i < elementSize; i++) {
-        masks[i] = temp;
-        negMasks[i] = ~temp;
-        temp -= 1 << (i);
-    }
     if (inda[0] < elementSize) {
         if (inda[arrSize - 1] >= elementSize) {
             int i = 0;
@@ -123,21 +130,21 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
 
 
 
-                res[0] = res[0] ^ (b2[0] & masks[mod]) >> mod;
+                res[0] = res[0] ^ (b2[0] & calculateSparseAndUsual2Masks[mod]) >> mod;
 
                 unsigned short it = 1;
                 for (int j = 1; j < m - 1; j++) {
-                    res[it] = res[it] ^ (((b2[j] & masks[mod]) >> mod) + ((b2[j - 1] & negMasks[mod]) << modNeg));
+                    res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
                     it++;
                 }
 
                 unsigned short temp2;
-                temp2 = ((b2[m - 1] >> mod) + ((b2[m - 2] & negMasks[mod]) << modNeg));
+                temp2 = ((b2[m - 1] >> mod) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
                 res[it] = res[it] ^ temp2;
 
 
-                unsigned short temp3 = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & negMasks[modGNeg]) << modG);
-                unsigned short temp4 = (temp3 & negMasks[mod]) << modNeg;
+                unsigned short temp3 = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
+                unsigned short temp4 = (temp3 & calculateSparseAndUsual2NegMasks[mod]) << modNeg;
                 res[0] = res[0] ^ temp4;
             }
 
@@ -145,7 +152,7 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
 
 
             /**for по элементам, которые больше elementSize*/
-            unsigned short lastElementShifted = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & negMasks[modGNeg]) << modG);
+            unsigned short lastElementShifted = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
 
             for (; i < arrSize; i++) {
                 unsigned short mod = inda[i] % elementSize;
@@ -153,12 +160,12 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                 unsigned short start = inda[i] / elementSize;
 
                 res[start] =
-                        res[start] ^ (((b2[0] & masks[mod]) >> mod) + ((lastElementShifted & negMasks[mod]) << modNeg));
+                        res[start] ^ (((b2[0] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((lastElementShifted & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
 
                 unsigned short it = start + 1;
                 int j = 1;
                 for (; it < m; it++, j++) {
-                    res[it] = res[it] ^ (((b2[j] & masks[mod]) >> mod) + ((b2[j - 1] & negMasks[mod]) << modNeg));
+                    res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
                 }
                 j--;
 
@@ -180,13 +187,13 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                 for (; j < m - 1; j++, it++) {
                     res[it] =
                             res[it] ^
-                            (((b2[j] & masks[newMod]) >> newMod) + ((b2[j - 1] & negMasks[newMod]) << newModNeg));
+                            (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
                 }
 
                 if (flag) {
                     res[it] =
                             res[it] ^
-                            (((b2[j] & masks[newMod]) >> newMod) + ((b2[j - 1] & negMasks[newMod]) << newModNeg));
+                            (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
                     it++;
                 }
             }
@@ -197,27 +204,27 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
                 unsigned short mod = inda[i] % elementSize;
                 unsigned short modNeg = (elementSize - mod) % elementSize;
 
-                res[0] = res[0] ^ (b2[0] & masks[mod]) >> mod;
+                res[0] = res[0] ^ (b2[0] & calculateSparseAndUsual2Masks[mod]) >> mod;
 
                 unsigned short it = 1;
                 for (int j = 1; j < m - 1; j++) {
-                    res[it] = res[it] ^ (((b2[j] & masks[mod]) >> mod) + ((b2[j - 1] & negMasks[mod]) << modNeg));
+                    res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
                     it++;
                 }
 
                 unsigned short temp2;
-                temp2 = ((b2[m - 1] >> mod) + ((b2[m - 2] & negMasks[mod]) << modNeg));
+                temp2 = ((b2[m - 1] >> mod) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
                 res[it] = res[it] ^ temp2;
 
-                unsigned short temp3 = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & negMasks[modGNeg]) << modG);
-                unsigned short temp4 = (temp3 & negMasks[mod]) << modNeg;
+                unsigned short temp3 = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
+                unsigned short temp4 = (temp3 & calculateSparseAndUsual2NegMasks[mod]) << modNeg;
                 res[0] = res[0] ^ temp4;
             }
 
         }
     } else {
 
-        unsigned short lastElementShifted = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & negMasks[modGNeg]) << modG);
+        unsigned short lastElementShifted = (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
         for (int i = 0; i < arrSize; i++) {
             unsigned short mod = inda[i] % elementSize;
             unsigned short modNeg = (elementSize - mod) % elementSize;
@@ -225,12 +232,12 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
 
 
             res[start] =
-                    res[start] ^ (((b2[0] & masks[mod]) >> mod) + ((lastElementShifted & negMasks[mod]) << modNeg));
+                    res[start] ^ (((b2[0] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((lastElementShifted & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
 
             unsigned short it = start + 1;
             int j = 1;
             for (; it < m; it++, j++) {
-                res[it] = res[it] ^ (((b2[j] & masks[mod]) >> mod) + ((b2[j - 1] & negMasks[mod]) << modNeg));
+                res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
             }
             j--;
 
@@ -249,13 +256,13 @@ void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsign
             for (; j < m - 1; j++, it++) {
                 res[it] =
                         res[it] ^
-                        (((b2[j] & masks[newMod]) >> newMod) + ((b2[j - 1] & negMasks[newMod]) << newModNeg));
+                        (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
             }
 
             if (flag) {
                 res[it] =
                         res[it] ^
-                        (((b2[j] & masks[newMod]) >> newMod) + ((b2[j - 1] & negMasks[newMod]) << newModNeg));
+                        (((b2[j] & calculateSparseAndUsual2Masks[newMod]) >> newMod) + ((b2[j - 1] & calculateSparseAndUsual2NegMasks[newMod]) << newModNeg));
                 it++;
             }
         }
@@ -426,9 +433,9 @@ int main_glukhikh() {
     printf("%f \n",100.0 * suc/(faili + suc));
     return 0;
 }
-int main_glukhikh_optimaz()
+int main_glukhikh_optimaz(long long seed)
 {
-    srand(273);
+    srand(seed);
     int epoh = 1000;
     /**|e1| + |e2| <= t
      * |e1| = |e2| - не обязательно
@@ -1209,12 +1216,6 @@ int main3() {
         }
 
         /**посчитали S*/
-        /*for (int i = 0; i < 150; i++)
-            printf("%d", s[i]);
-
-
-
-        printf("\n");*/
 
         for (int i = 0; i < n; i++)
             u[i] = v[i] = 0;
@@ -1261,12 +1262,10 @@ int main3() {
         }
 
         if (exitFlag) {
-            //printf("success\n");
             suc++;
 
         } else {
             fail++;
-            //printf("fail\n");
         }
         clock_t end = clock();
         time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
@@ -1281,12 +1280,11 @@ int main3() {
     return 0;
 }
 
-void main4() {
-    srand(273);
+void main4(long long seed) {
+    srand(seed);
 
     unsigned short epoh = 1000;
 
-    unsigned short masks[elementSize];
 
     /**|e1| + |e2| <= t
      * |e1| = |e2| - не обязательно
@@ -1329,10 +1327,6 @@ void main4() {
     /**компактное хранение e2*/
     unsigned short e2Compact[eLength];
 
-
-    unsigned short e1[n];
-    unsigned short e2[n];
-
     unsigned short e1Compressed[m];
     unsigned short e2Compressed[m];
 
@@ -1352,9 +1346,7 @@ void main4() {
 
     double time_spent = 0;
 
-    masks[0] = 1 << (elementSize - 1);
-    for (int i = 1; i < elementSize; i++)
-        masks[i] = masks[i - 1] >> 1;
+
 
     for(int asd = 0;asd<epoh;asd++)
     {
@@ -1379,23 +1371,12 @@ void main4() {
             h2TransCompact[i] = n - h2Compact[i];
         }
 
-
-        for (int i = 0; i < n; i++)
-            e1[i] = e2[i] = 0;
-
-        for (int i = 0; i < eLength; i++)
-            e1[e1Compact[i]] = 1;
-        for (int i = 0; i < eLength; i++)
-            e2[e2Compact[i]] = 1;
-
-
         for (int i = 0; i < m; i++) {
             e1Compressed[i] = e2Compressed[i] = 0;
         }
 
-        createDenseArray(e1Compressed, m, e1, n);
-        createDenseArray(e2Compressed, m, e2, n);
-
+        createDenseArrayFromCompact(e1Compressed,m,e1Compact,eLength);
+        createDenseArrayFromCompact(e2Compressed,m,e2Compact,eLength);
 
         for (int i = 0; i < m; i++) {
             c1[i] = c2[i] = s[i] = 0;
@@ -1436,11 +1417,11 @@ void main4() {
             //todo ошибка в подсчете изменения
             for (int j = 0; j < n; j++) {
                 if (upc1[j] >= T) {
-                    u[j / elementSize] = u[j / elementSize] ^ masks[j % elementSize];
+                    u[j / elementSize] = u[j / elementSize] ^ mainMasks[j % elementSize];
                 }
 
                 if (upc2[j] >= T) {
-                    v[j / elementSize] = v[j / elementSize] ^ masks[j % elementSize];
+                    v[j / elementSize] = v[j / elementSize] ^ mainMasks[j % elementSize];
                 }
 
             }
@@ -1494,15 +1475,35 @@ void main4() {
 
 
 int main() {
+    long long seed = time(0);
+
+    /*начало блока инициализации*/
+    mainMasks = calloc(elementSize, sizeof(unsigned short ));
+    mainMasks[0] = 1 << (elementSize - 1);
+    for (int i = 1; i < elementSize; i++)
+        mainMasks[i] = mainMasks[i - 1] >> 1;
+    denseArrayFromCompactMasks = calloc(elementSize, sizeof(unsigned short ));
+    denseArrayFromCompactMasks[elementSize - 1] = 1;
+    for (int i = 0;i< elementSize-1;i++)
+    {
+        denseArrayFromCompactMasks[elementSize - 2 - i] = denseArrayFromCompactMasks[elementSize - 1 - i] << 1;
+    }
+
+    calculateSparseAndUsual2Masks = calloc(elementSize,sizeof (unsigned short ));
+    calculateSparseAndUsual2NegMasks = calloc(elementSize,sizeof (unsigned short ));
+    unsigned short temp = -1;
+    for (int i = 0; i < elementSize; i++) {
+        calculateSparseAndUsual2Masks[i] = temp;
+        calculateSparseAndUsual2NegMasks[i] = ~temp;
+        temp -= 1 << (i);
+    }
+
+    /*конец блока инициализации*/
 
 
-
-    main4();
+    main4(seed);
     //main3();
-    main_glukhikh_optimaz();
-    //main_glukhikh();
-
-    //main_glukhikh_not_optimaz();
+    main_glukhikh_optimaz(seed);
     return 0;
 }
 
