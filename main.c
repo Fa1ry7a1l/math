@@ -16,35 +16,35 @@ unsigned short *calculateSparseAndUsual2NegMasks;
 int my_random_seed = 0;
 
 void
-my_computationZb(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+my_computationZb(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
 
 void
-my_computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+my_computationF2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
 
 void
-my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+my_computationZ(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
 
 void
-my_computationZ_last(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b,
+my_computationZ_last(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
                      unsigned short *c);
 
 /**стандартная свертка разреженного и не разреженного векторов F2
- * M - длина неразреженного вектора
+ * n - длина неразреженного вектора
  * arrSize - количество ненулевых элементов резреженного вектора
  * inda - вектор номеров позиций ненулевых координт разреженного вектора
  * b - неразреженный вектор F2
  * c - результирующий вектор (F2)*/
 void
-computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+computationF2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
 
 /**стандартная свертка разреженного и не разреженного векторов в Z
- * M - длина неразреженного вектора
+ * n - длина неразреженного вектора
  * arrSize - количество ненулевых элементов резреженного вектора
  * inda - вектор номеров позиций ненулевых координт разреженного вектора
  * b - неразреженный вектор F2
  * c - результирующий вектор (Z)*/
 void
-computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+computationZ(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
 
 
 /**перевод последовательности unsigned short в строку*/
@@ -60,14 +60,14 @@ char *toBinary(unsigned short n, int len) {
 
 /**генерирует разреженный массив, как массив индексов ненулевых элементов, упорядоченных в порядке возрастания.
  * arr - результирующий вектор индексов
- * M - максимальный индекс в векторе
+ * n - максимальный индекс в векторе
  * resSize - количество элементов в результирующем векторе
  * */
-void generateSparseArray(unsigned short *arr, int M, unsigned short resSize) {
+void generateSparseArray(unsigned short *arr, int n, unsigned short resSize) {
     unsigned short i = 0;
     int flag;
     while (i < resSize) {
-        unsigned int c = rand() % M;
+        unsigned int c = rand() % n;
 
         flag = 1;
         for (int j = 0; j < i; j++) {
@@ -125,10 +125,10 @@ void generateDenseArray(unsigned short *arr, int m) {
     }
 }
 
-void calculateSparseAndUsual2(unsigned short M, int arrSize, int m, const unsigned short *inda, unsigned short *b2,
+void calculateSparseAndUsual2(unsigned short n, int arrSize, int m, const unsigned short *inda, unsigned short *b2,
                               unsigned short *res) {
 
-    unsigned short modG = M % elementSize;
+    unsigned short modG = n % elementSize;
     unsigned short modGNeg = (elementSize - modG) % elementSize;
 
 
@@ -946,11 +946,11 @@ int main_glukhikh_not_optimaz() {
 }
 
 /**разжимает вектор*/
-void decompressArray(unsigned short M, unsigned short m, unsigned short *arrTo, unsigned short *arrFrom) {
-    int it = M - 1;
+void decompressArray(unsigned short n, unsigned short m, unsigned short *arrTo, unsigned short *arrFrom) {
+    int it = n - 1;
     unsigned short temp = arrFrom[m - 1];
-    unsigned short mod = M % elementSize;
-    temp = temp >> (elementSize - (M % elementSize)) % elementSize;
+    unsigned short mod = n % elementSize;
+    temp = temp >> (elementSize - (n % elementSize)) % elementSize;
 
     if (mod == 0) {
         for (int i = m - 1; i >= 0; i--) {
@@ -1198,7 +1198,7 @@ int main3(long long seed) {
 
     for (int ast = 0; ast < epoh; ast++) {
         //todo отметим что srand стоит проводить каждый раз
-        srand(time(0));
+        //srand(time(0));
         clock_t begin = clock();
 
         for (int i = 0; i < hLength; i++) {
@@ -1524,27 +1524,27 @@ int main() {
     /*конец блока инициализации*/
 
 
-    //main4(seed);
+    main4(seed);
     //main_glukhikh_optimaz(seed);
     main3(seed);
     return 0;
 }
 
 void
-my_computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b,
+my_computationF2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
                  unsigned short *c) {
     //printf("begin computation\n");
     int j;
     int new_j;
     for (unsigned short *i = inda; i != inda + arrSize; i++) {
         j = 0;
-        new_j = M - *i + j;
+        new_j = n - *i + j;
         for (; j < *i; j++) {
             c[j] = (c[j] + b[new_j]) % 2;
             new_j++;
         }
         new_j = j - *i;
-        for (; j < M; j++) {
+        for (; j < n; j++) {
             c[j] = (c[j] + b[new_j]) % 2;
             new_j++;
         }
@@ -1552,10 +1552,10 @@ my_computationF2(unsigned short M, int arrSize, const unsigned short *inda, cons
 }
 
 void
-computationF2(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
+computationF2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
     for (int i = 0; i < arrSize; i++) {
-        for (int j = 0; j < M; j++) {
-            c[j] = (c[j] + b[(j - inda[i] + M) % M]) % 2;
+        for (int j = 0; j < n; j++) {
+            c[j] = (c[j] + b[(j - inda[i] + n) % n]) % 2;
         }
     }
 }
@@ -1577,16 +1577,16 @@ void baseComputationZ(unsigned short n, const unsigned short *a, const unsigned 
 }
 
 void
-computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
+computationZ(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
     for (int i = 0; i < arrSize; i++) {
-        for (int j = 0; j < M; j++) {
-            c[j] = (c[j] + b[(j - inda[i] + M) % M]);
+        for (int j = 0; j < n; j++) {
+            c[j] = (c[j] + b[(j - inda[i] + n) % n]);
         }
     }
 }
 
 void
-my_computationZ_last(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b,
+my_computationZ_last(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
                      unsigned short *c) {
     //printf("begin computation\n");
     unsigned short *pointer_c;
@@ -1596,14 +1596,14 @@ my_computationZ_last(unsigned short M, int arrSize, const unsigned short *inda, 
     for (unsigned short *i = inda; i != end; i++) {
         pointer_c = c;
         j = 0;
-        new_j = M - *i;
+        new_j = n - *i;
         for (; j < *i; j++) {
             *pointer_c = (*pointer_c + b[new_j]);
             new_j++;
             pointer_c++;
         }
         new_j = j - *i;
-        for (; j < M; j++) {
+        for (; j < n; j++) {
             *pointer_c = (*pointer_c + b[new_j]);
             new_j++;
             pointer_c++;
@@ -1614,7 +1614,7 @@ my_computationZ_last(unsigned short M, int arrSize, const unsigned short *inda, 
 }
 
 void
-my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
+my_computationZ(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c) {
     //printf("begin computation\n");
     unsigned short *pointer_c;
     int j;
@@ -1625,7 +1625,7 @@ my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const
 
         pointer_c = c;
         j = 0;
-        new_j = M - *i;
+        new_j = n - *i;
         save_i = (*i) / 4;
         for (; j < save_i; j++) {
             *pointer_c = (*pointer_c + b[new_j]);
@@ -1645,7 +1645,7 @@ my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const
             pointer_c++;
         }
         new_j = pointer_c - c - *i;
-        save_i = (M - *i) / 4;
+        save_i = (n - *i) / 4;
         //printf("check %d , i - %d\n",check,*i);
         for (j = 0; j < save_i; j++) {
 
@@ -1664,7 +1664,7 @@ my_computationZ(unsigned short M, int arrSize, const unsigned short *inda, const
             pointer_c++;
 
         }
-        save_i = (M - *i) - save_i * 4;
+        save_i = (n - *i) - save_i * 4;
         for (j = 0; j < save_i; j++) {
             *pointer_c = (*pointer_c + b[new_j]);
             new_j++;
