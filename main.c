@@ -133,7 +133,6 @@ void calculateSparseAndUsual2(unsigned short n, int arrSize, int m, const unsign
 
 
     if (inda[0] < elementSize) {
-        if (inda[arrSize - 1] >= elementSize) {
             int i = 0;
             for (i = 0; inda[i] < elementSize; i++) {
                 unsigned short mod = inda[i] % elementSize;
@@ -216,31 +215,6 @@ void calculateSparseAndUsual2(unsigned short n, int arrSize, int m, const unsign
             }
 
 
-        } else {
-            for (int i = 0; i < arrSize; i++) {
-                unsigned short mod = inda[i] % elementSize;
-                unsigned short modNeg = (elementSize - mod) % elementSize;
-
-                res[0] = res[0] ^ (b2[0] & calculateSparseAndUsual2Masks[mod]) >> mod;
-
-                unsigned short it = 1;
-                for (int j = 1; j < m - 1; j++) {
-                    res[it] = res[it] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) +
-                                         ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
-                    it++;
-                }
-
-                unsigned short temp2;
-                temp2 = ((b2[m - 1] >> mod) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));
-                res[it] = res[it] ^ temp2;
-
-                unsigned short temp3 =
-                        (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
-                unsigned short temp4 = (temp3 & calculateSparseAndUsual2NegMasks[mod]) << modNeg;
-                res[0] = res[0] ^ temp4;
-            }
-
-        }
     } else {
 
         unsigned short lastElementShifted =
