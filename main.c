@@ -46,6 +46,9 @@ computationF2(unsigned short n, int arrSize, const unsigned short *inda, const u
 void
 computationZ(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
 
+void baseComputationF2(unsigned short n, const unsigned short *a, const unsigned short *b, unsigned short *c);
+
+void baseComputationZ(unsigned short n, const unsigned short *a, const unsigned short *b, unsigned short *c);
 
 /**перевод последовательности unsigned short в строку*/
 char *toBinary(unsigned short n, int len) {
@@ -1114,7 +1117,7 @@ int main2() {
 int main3(long long seed) {
     srand(seed);
 
-    unsigned short epoh = 1000;
+    unsigned short epoh = 100000;
 
 
     /**|e1| + |e2| <= t
@@ -1283,7 +1286,7 @@ int main3(long long seed) {
 void main4(long long seed) {
     srand(seed);
 
-    unsigned short epoh = 1000;
+    unsigned short epoh = 100000;
 
 
     /**|e1| + |e2| <= t
@@ -1471,6 +1474,208 @@ void main4(long long seed) {
     printf("%f \n", 100.0 * suc / (fail + suc));
 }
 
+void convolutionF2Test()
+{
+    int epoh = 100000;
+
+    long long seed = time(0);
+
+    unsigned short hLength = 45;
+    unsigned short n = 4801;
+
+    unsigned short h1[hLength];
+
+    unsigned short h2[hLength];
+
+    unsigned short baseH1[n], baseH2[n], baseResult[n];
+
+    int m = (n + elementSize - 1)/ elementSize;
+    unsigned  short denseH2[m], res[m];
+
+    unsigned short tmp = 0;
+
+    double time_spent = 0;
+
+
+    //базовая свертка, чтобы рандом был для всех одинаковый, методы генерации данных оставляем одни и те же
+    for(int it = 0; it < epoh; it++)
+    {
+        srand(seed);
+        generateSparseArray(h1, n, hLength);
+        generateSparseArray(h2, n, hLength);
+        for(int i = 0;i<n;i++)
+        {
+            baseH1[i]=baseH2[i]=baseResult[i]=0;
+        }
+
+        for(int i = 0;i< hLength;i++)
+        {
+            baseH1[h1[i]]=1;
+            baseH2[h2[i]]=1;
+        }
+
+        clock_t begin = clock();
+
+        baseComputationF2(n,baseH1,baseH2,baseResult);
+
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+    }
+
+    printf("baseComputationF2\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+
+
+    time_spent = 0;
+    for(int it = 0; it < epoh; it++)
+    {
+        srand(seed);
+        generateSparseArray(h1, n, hLength);
+        generateSparseArray(h2, n, hLength);
+        for(int i = 0;i<n;i++)
+        {
+            baseH1[i]=baseH2[i]=baseResult[i]=0;
+        }
+
+        for(int i = 0;i< hLength;i++)
+        {
+            baseH2[h2[i]]=1;
+        }
+
+        clock_t begin = clock();
+
+        computationF2(n,hLength,h1,baseH2,baseResult);
+
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+    }
+
+    printf("computationF2\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+
+    time_spent = 0;
+    for(int it = 0; it < epoh; it++)
+    {
+        srand(seed);
+        generateSparseArray(h1, n, hLength);
+        generateSparseArray(h2, n, hLength);
+        for(int i = 0;i<n;i++)
+        {
+            baseResult[i]=0;
+        }
+
+        for(int i = 0;i<m;i++)
+        {
+            denseH2[i] = res[i]=0;
+        }
+        createDenseArrayFromCompact(denseH2,m,h2,hLength);
+
+        for(int i = 0;i< hLength;i++)
+        {
+            baseH2[h2[i]]=1;
+        }
+
+        clock_t begin = clock();
+
+        calculateSparseAndUsual2(n, hLength, m, h1, denseH2, res);
+
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+
+        tmp +=res[0];
+    }
+
+    printf("calculateSparseAndUsual2\n");
+    printf("trash %d",tmp);
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+}
+
+void convolutionZTest()
+{
+    int epoh = 100000;
+
+    long long seed = time(0);
+
+    unsigned short hLength = 45;
+    unsigned short n = 4801;
+
+    unsigned short h1[hLength];
+
+    unsigned short h2[hLength];
+
+    unsigned short baseH1[n], baseH2[n], baseResult[n];
+
+    int m = (n + elementSize - 1)/ elementSize;
+    unsigned  short denseH2[m], res[m];
+
+    unsigned short tmp = 0;
+
+    double time_spent = 0;
+
+
+    //базовая свертка, чтобы рандом был для всех одинаковый, методы генерации данных оставляем одни и те же
+    for(int it = 0; it < epoh; it++)
+    {
+        srand(seed);
+        generateSparseArray(h1, n, hLength);
+        generateSparseArray(h2, n, hLength);
+        for(int i = 0;i<n;i++)
+        {
+            baseH1[i]=baseH2[i]=baseResult[i]=0;
+        }
+
+        for(int i = 0;i< hLength;i++)
+        {
+            baseH1[h1[i]]=1;
+            baseH2[h2[i]]=1;
+        }
+
+        clock_t begin = clock();
+
+        baseComputationZ(n,baseH1,baseH2,baseResult);
+
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+    }
+
+    printf("baseComputationZ\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+
+
+    time_spent = 0;
+    for(int it = 0; it < epoh; it++)
+    {
+        srand(seed);
+        generateSparseArray(h1, n, hLength);
+        generateSparseArray(h2, n, hLength);
+        for(int i = 0;i<n;i++)
+        {
+            baseH1[i]=baseH2[i]=baseResult[i]=0;
+        }
+
+        for(int i = 0;i< hLength;i++)
+        {
+            baseH1[h1[i]]=1;
+            baseH2[h2[i]]=1;
+        }
+
+        clock_t begin = clock();
+
+        my_computationZ(n,hLength,h1,baseH2,baseResult);
+
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+    }
+
+    printf("computationF2\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+}
+
 
 int main() {
     long long seed = time(0);
@@ -1497,10 +1702,12 @@ int main() {
 
     /*конец блока инициализации*/
 
-
     main4(seed);
     //main_glukhikh_optimaz(seed);
     main3(seed);
+
+    //convolutionF2Test();
+    //convolutionZTest();
     return 0;
 }
 
