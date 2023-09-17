@@ -112,10 +112,22 @@ void generateDenseArray(unsigned short *arr, int m) {
     }
 }
 
+
+/** целевая функция
+ * n - длина векторов, в битах
+ * arrSize - количество элементов в inda
+ * m - длина в short
+ * inda - массив ненулевых индексов (вектор а)
+ * b2 - массив short, полученный путем сжатия по 16 элементов в 1 short
+ * res - результат - тоже сжатый
+ * */
 void calculateSparseAndUsual2(unsigned short n, int arrSize, int m, const unsigned short *inda, unsigned short *b2,
                               unsigned short *res) {
 
+
+    /**modG - длина "хвоста"*/
     unsigned short modG = n % elementSize;
+    /**modGNeg - количество бесполезных битов в последнем элементе*/
     unsigned short modGNeg = (elementSize - modG) % elementSize;
 
 
