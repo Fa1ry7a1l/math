@@ -289,7 +289,7 @@ calculateSparseAndUsual2NewVersion(unsigned short n, int arrSize, int m, const u
 
 
     unsigned short lastElementShifted =
-            (b2[m - 1] >> modGNeg) + ((b2[m - 2] /*& calculateSparseAndUsual2NegMasks[modGNeg]*/) << modG);
+            (b2[m - 1] >> modGNeg) + ((b2[m - 2] & calculateSparseAndUsual2NegMasks[modGNeg]) << modG);
     for (int i = 0; i < arrSize; i++) {
         unsigned short mod = inda[i] % elementSize;
         unsigned short modNeg = (elementSize - mod) % elementSize;
@@ -307,8 +307,9 @@ calculateSparseAndUsual2NewVersion(unsigned short n, int arrSize, int m, const u
         /*res[m - 1] = res[m - 1] ^ (((b2[j] & calculateSparseAndUsual2Masks[mod]) >> mod) +
                                    ((b2[j - 1] & calculateSparseAndUsual2NegMasks[mod]) << modNeg));*/
 
-        /*if(inda[0] == 19 && n == 35)
+        /*if(inda[0] == 2 && n == 32)
         {
+            printf("%s\n",toBinary(lastElementShifted, elementSize));
             for (int t = 0; t < m; t++) {
                 printf("%s ", toBinary(b2[t], elementSize));
             }
@@ -729,7 +730,7 @@ int main() {
 
 
 
-    test(62, 66);
+    test(4801, 4801);
 
 
 
