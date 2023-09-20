@@ -24,6 +24,10 @@ int my_random_seed = 0;
 void
 computationF2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
 
+void
+my_computationF2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
+                 unsigned short *c);
+
 /**стандартная свертка разреженного и не разреженного векторов в Z
  * n - длина неразреженного вектора
  * arrSize - количество ненулевых элементов резреженного вектора
@@ -32,6 +36,10 @@ computationF2(unsigned short n, int arrSize, const unsigned short *inda, const u
  * c - результирующий вектор (Z)*/
 void
 computationZ(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b, unsigned short *c);
+
+void
+my_computationZ_last(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
+                     unsigned short *c);
 
 
 /**перевод последовательности unsigned short в строку*/
@@ -132,7 +140,8 @@ void generateDenseArray(unsigned short *arr, int n) {
  * res - результат - тоже сжатый
  * */
 void
-calculateSparseAndUsual2NewVersion(unsigned short n, int arrSize, int m, const unsigned short *inda, unsigned short *b2,
+calculateSparseAndUsual2NewVersion(unsigned short n, int arrSize, int m, const unsigned short *inda,
+                                   const unsigned short *b2,
                                    unsigned short *res) {
     /**modG - длина "хвоста"*/
     unsigned short modG = n % elementSize;
@@ -192,7 +201,7 @@ calculateSparseAndUsual2NewVersion(unsigned short n, int arrSize, int m, const u
 }
 
 /**разжимает вектор*/
-void decompressArray(unsigned short n, unsigned short m, unsigned short *arrTo, unsigned short *arrFrom) {
+void decompressArray(unsigned short n, unsigned short m, unsigned short *arrTo, const unsigned short *arrFrom) {
     int it = n - 1;
     unsigned short temp = arrFrom[m - 1];
     unsigned short mod = n % elementSize;
@@ -225,7 +234,7 @@ void decompressArray(unsigned short n, unsigned short m, unsigned short *arrTo, 
 
 }
 
-int compare(unsigned short n, unsigned short *arr1, unsigned short m, unsigned short *arr2) {
+int compare(unsigned short n, unsigned short *arr1, unsigned short m, const unsigned short *arr2) {
     unsigned short arr2Decompressed[n];
     decompressArray(n, m, arr2Decompressed, arr2);
     for (int i = 0; i < n; i++) {
@@ -257,10 +266,10 @@ void testDecoder(long long seed, int epoh) {
     unsigned short flag = 0;
     unsigned short exitFlag = 0;
 
-    unsigned short num_it = 10;
+    unsigned short num_it = 100;
 
-    //unsigned short n = 4801;
-    unsigned short n = 50;
+    unsigned short n = 4801;
+    //unsigned short n = 50;
 
     unsigned short m = (n + elementSize - 1) / elementSize;
 
@@ -292,16 +301,26 @@ void testDecoder(long long seed, int epoh) {
     unsigned short *s = calloc(m, sizeof(unsigned short));
 
     unsigned short *u = calloc(m, sizeof(unsigned short));
-    unsigned short *u1 = calloc(n, sizeof(unsigned short));
     unsigned short *v = calloc(m, sizeof(unsigned short));;
-    unsigned short *v1 = calloc(n, sizeof(unsigned short));;
 
     unsigned short *sTemp = calloc(m, sizeof(unsigned short));
     unsigned short *upc1 = calloc(n, sizeof(unsigned short));
     unsigned short *upc2 = calloc(n, sizeof(unsigned short));
     unsigned short *sTempDecompressed = calloc(n, sizeof(unsigned short));;
+
+
+    //переменные для тестирования
     unsigned short *e1Temp = calloc(n, sizeof(unsigned short));
     unsigned short *e2Temp = calloc(n, sizeof(unsigned short));
+    unsigned short *vTemp = calloc(n, sizeof(unsigned short));;
+    unsigned short *uTemp = calloc(n, sizeof(unsigned short));
+    unsigned short *c1Test = calloc(n, sizeof(unsigned short));
+    unsigned short *c2Test = calloc(n, sizeof(unsigned short));
+    unsigned short *sTest = calloc(n, sizeof(unsigned short));
+    unsigned short *sTestTemp = calloc(n, sizeof(unsigned short));
+    unsigned short *upc1Test = calloc(n, sizeof(unsigned short));
+    unsigned short *upc2Test = calloc(n, sizeof(unsigned short));
+    int flagTemp;
 
 
     /**Конец объявления*/
@@ -343,6 +362,7 @@ void testDecoder(long long seed, int epoh) {
             e1Temp[i] = e2Temp[i] = 0;
         }
 
+        /**Проверка правильности заполнения данными*/
         for (int i = 0; i < eLength; i++) {
             e1Temp[e1Compact[i]] = 1;
             e2Temp[e2Compact[i]] = 1;
@@ -378,13 +398,37 @@ void testDecoder(long long seed, int epoh) {
             c1[i] = c2[i] = s[i] = 0;
         }
 
-
         calculateSparseAndUsual2NewVersion(n, hLength, m, h1Compact, e1Compressed, c1);
-
         calculateSparseAndUsual2NewVersion(n, hLength, m, h2Compact, e2Compressed, c2);
+
+
+        /**проверка свертки генерации ключей*/
+        for (int i = 0; i < n; i++) {
+            c2Test[i] = c1Test[i] = 0;
+        }
+
+        my_computationF2(n, hLength, h1Compact, e1Temp, c1Test);
+        my_computationF2(n, hLength, h2Compact, e2Temp, c2Test);
+
+        if (!compare(n, c1Test, m, c1)) {
+            printf("error in key get convolution c1\n");
+        }
+        if (!compare(n, c2Test, m, c2)) {
+            printf("error in key get convolution c2\n");
+        }
+
 
         for (int i = 0; i < m; i++) {
             s[i] = c1[i] ^ c2[i];
+        }
+
+        /**проверка вычисления синдрома*/
+        for (int i = 0; i < n; i++) {
+            sTest[i] = c1Test[i] ^ c2Test[i];
+        }
+
+        if (!compare(n, sTest, m, s)) {
+            printf("error in syndrome S\n");
         }
 
         /**посчитали S*/
@@ -394,11 +438,17 @@ void testDecoder(long long seed, int epoh) {
         for (int i = 0; i < m; i++)
             u[i] = v[i] = 0;
 
-        for (int i = 0; i < m; i++)
-            u1[i] = v1[i] = 0;
+        for (int i = 0; i < n; i++)
+            uTemp[i] = vTemp[i] = 0;
 
         for (int i = 0; i < m; i++) {
             sTemp[i] = s[i];
+        }
+
+
+        /**для теста*/
+        for (int i = 0; i < n; i++) {
+            sTestTemp[i] = sTest[i];
         }
 
         for (int z = 0; z < num_it; z++) {
@@ -410,39 +460,88 @@ void testDecoder(long long seed, int epoh) {
 
             decompressArray(n, m, sTempDecompressed, sTemp);
 
+            /**тест распаковки*/
+            for (int i = 0; i < n; i++) {
+                if (sTempDecompressed[i] != sTestTemp[i]) {
+                    printf("error in s decompress %d\n", z);
+                    break;
+                }
+            }
+
             computationZ(n, hLength, h1TransCompact, sTempDecompressed, upc1);
             computationZ(n, hLength, h2TransCompact, sTempDecompressed, upc2);
 
-            //todo ошибка в подсчете изменения
+            /**тестирование на совпадение целочисленной свертки после распаковки*/
+            for (int i = 0; i < n; i++) {
+                upc1Test[i] = upc2Test[i] = 0;
+            }
+            computationZ(n, hLength, h1TransCompact, sTestTemp, upc1Test);
+            computationZ(n, hLength, h2TransCompact, sTestTemp, upc2Test);
+            for (int i = 0; i < n; i++) {
+                if (upc1Test[i] != upc1[i]) {
+                    printf("Error in convolution z with upc1\n");
+                    break;
+                }
+            }
+            for (int i = 0; i < n; i++) {
+                if (upc2Test[i] != upc2[i]) {
+                    printf("Error in convolution z with upc2\n");
+                    break;
+                }
+            }
+
+
             for (int j = 0; j < n; j++) {
                 if (upc1[j] >= T) {
                     u[j / elementSize] = u[j / elementSize] ^ mainMasks[j % elementSize];
+
+                    uTemp[j] = uTemp[j] ^ 1;
                 }
 
                 if (upc2[j] >= T) {
+                    /*printf("need to replace element %d\n",j);
+                    printf("from %s", toBinary(v[j / elementSize],elementSize));*/
                     v[j / elementSize] = v[j / elementSize] ^ mainMasks[j % elementSize];
+                    /*printf(" got %s\n", toBinary(v[j / elementSize],elementSize));
+*/
+                    vTemp[j] = vTemp[j] ^ 1;
                 }
 
             }
 
-            for (int j = 0; j < n; j++) {
-                if (upc1[j] >= T) {
-                    u1[j] = u1[j] ^ 1;
-                }
+            /**проверка изменения upc*/
+            if (compare(n, vTemp, m, v) == 0 || compare(n, uTemp, m, u) == 0) {
+                printf("asd %d it %d\n", asd, z);
 
-                if (upc2[j] >= T) {
-                    v1[j] = v1[j] ^ 1;
-                }
+                printf("T %d\n", T);
 
-            }
-
-
-            if(compare(n,v1,m,v) == 0 || compare(n,u1,m,u) == 0)
-            {
-                printf("u v error\n");
+                printf("upc\n");
                 for (int i = 0; i < n; i++) {
-                    printf("%d", u1[i]);
+                    printf("%d ", upc2[i]);
                     if (i % elementSize == 15)
+                        printf(" ");
+                }
+                printf("\n");
+
+                printf("v and vTemp\n");
+
+                for (int j = 0; j < n; j++) {
+                    printf("%d", vTemp[j]);
+                    if (j % elementSize == 15)
+                        printf(" ");
+                }
+                printf("\n");
+                for (int i = 0; i < m; i++) {
+                    printf("%s ", toBinary(v[i], elementSize));
+                }
+                printf("\n");
+                printf("\n");
+
+                printf("u and uTemp\n");
+
+                for (int j = 0; j < n; j++) {
+                    printf("%d", uTemp[j]);
+                    if (j % elementSize == 15)
                         printf(" ");
                 }
                 printf("\n");
@@ -457,12 +556,37 @@ void testDecoder(long long seed, int epoh) {
                 sTemp[i] = c1[i] = c2[i] = 0;
             }
 
+            for (int i = 0; i < n; i++) {
+                sTestTemp[i] = c1Test[i] = c2Test[i] = 0;
+            }
+
 
             calculateSparseAndUsual2NewVersion(n, hLength, m, h1Compact, u, c1);
             calculateSparseAndUsual2NewVersion(n, hLength, m, h2Compact, v, c2);
 
+            /**проверки свертки f2 внутри цикла*/
+
+            my_computationF2(n, hLength, h1Compact, uTemp, c1Test);
+            my_computationF2(n, hLength, h2Compact, vTemp, c2Test);
+
+            if (!compare(n, c1Test, m, c1)) {
+                printf("error is convolution F2 in cycle with c1\n");
+            }
+            if (!compare(n, c2Test, m, c2)) {
+                printf("error is convolution F2 in cycle with c2\n");
+            }
+
+
             for (int i = 0; i < m; i++) {
                 sTemp[i] = s[i] ^ c1[i] ^ c2[i];
+            }
+            /**тестирование вычисления конечного s*/
+            for (int i = 0; i < n; i++) {
+                sTestTemp[i] = sTest[i] ^ c1Test[i] ^ c2Test[i];
+            }
+
+            if (!compare(n, sTestTemp, m, sTemp)) {
+                printf("error in s temp generating in cycle\n");
             }
 
             /**проверка s` на ноль*/
@@ -474,6 +598,20 @@ void testDecoder(long long seed, int epoh) {
                     break;
                 }
             }
+
+            /**проверка сравнения s`*/
+            flagTemp = 0;
+            for (int i = 0; i < n; i++) {
+                if (sTestTemp[i] != 0) {
+                    flagTemp = 1;
+                    break;
+                }
+            }
+            if (flagTemp != flag) {
+                printf("error in comparing sTemp to zero\n");
+            }
+
+
             if (!flag) {
                 exitFlag = 1;
                 break;
@@ -510,10 +648,10 @@ void testDecoder(long long seed, int epoh) {
     free(upc2);
     free(sTempDecompressed);
 
-    printf("modified mod\n");
+    printf("test decoder\n");
     printf("The elapsed time is %f seconds\n", time_spent);
     printf("One run is %f seconds\n", (time_spent / epoh));
-    printf("%f \n", 100.0 * suc / (epoh));
+    printf("%f \n", 100.0 * suc / (double) (epoh));
 }
 
 void decoderOptimized(long long seed, int epoh) {
@@ -535,9 +673,10 @@ void decoderOptimized(long long seed, int epoh) {
     unsigned short flag = 0;
     unsigned short exitFlag = 0;
 
-    unsigned short num_it = 10;
+    unsigned short num_it = 100;
 
     unsigned short n = 4801;
+    //unsigned short n = 50;
 
     unsigned short m = (n + elementSize - 1) / elementSize;
 
@@ -574,8 +713,7 @@ void decoderOptimized(long long seed, int epoh) {
     unsigned short *sTemp = calloc(m, sizeof(unsigned short));
     unsigned short *upc1 = calloc(n, sizeof(unsigned short));
     unsigned short *upc2 = calloc(n, sizeof(unsigned short));
-    unsigned short *sTempDecompressed = calloc(n, sizeof(unsigned short));
-
+    unsigned short *sTempDecompressed = calloc(n, sizeof(unsigned short));;
 
     /**Конец объявления*/
     float suc = 0, fail = 0;
@@ -617,9 +755,7 @@ void decoderOptimized(long long seed, int epoh) {
             c1[i] = c2[i] = s[i] = 0;
         }
 
-
         calculateSparseAndUsual2NewVersion(n, hLength, m, h1Compact, e1Compressed, c1);
-
         calculateSparseAndUsual2NewVersion(n, hLength, m, h2Compact, e2Compressed, c2);
 
         for (int i = 0; i < m; i++) {
@@ -646,10 +782,9 @@ void decoderOptimized(long long seed, int epoh) {
 
             decompressArray(n, m, sTempDecompressed, sTemp);
 
-            computationZ(n, hLength, h1TransCompact, sTempDecompressed, upc1);
-            computationZ(n, hLength, h2TransCompact, sTempDecompressed, upc2);
+            my_computationZ_last(n, hLength, h1TransCompact, sTempDecompressed, upc1);
+            my_computationZ_last(n, hLength, h2TransCompact, sTempDecompressed, upc2);
 
-            //todo ошибка в подсчете изменения
             for (int j = 0; j < n; j++) {
                 if (upc1[j] >= T) {
                     u[j / elementSize] = u[j / elementSize] ^ mainMasks[j % elementSize];
@@ -664,7 +799,6 @@ void decoderOptimized(long long seed, int epoh) {
             for (int i = 0; i < m; i++) {
                 sTemp[i] = c1[i] = c2[i] = 0;
             }
-
 
             calculateSparseAndUsual2NewVersion(n, hLength, m, h1Compact, u, c1);
             calculateSparseAndUsual2NewVersion(n, hLength, m, h2Compact, v, c2);
@@ -682,6 +816,7 @@ void decoderOptimized(long long seed, int epoh) {
                     break;
                 }
             }
+
             if (!flag) {
                 exitFlag = 1;
                 break;
@@ -718,10 +853,10 @@ void decoderOptimized(long long seed, int epoh) {
     free(upc2);
     free(sTempDecompressed);
 
-    printf("modified mod\n");
+    printf("Optimized decoder\n");
     printf("The elapsed time is %f seconds\n", time_spent);
     printf("One run is %f seconds\n", (time_spent / epoh));
-    printf("%f \n", 100.0 * suc / (epoh));
+    printf("%f \n", 100.0 * suc / (double) (epoh));
 }
 
 void decoder(long long seed, int epoh) {
@@ -743,7 +878,7 @@ void decoder(long long seed, int epoh) {
     unsigned short flag = 0;
     unsigned short exitFlag = 0;
 
-    unsigned short num_it = 10;
+    unsigned short num_it = 100;
 
     unsigned short n = 4801;
 
@@ -806,9 +941,13 @@ void decoder(long long seed, int epoh) {
             e2Full[e2Compact[i]] = 1;
         }
 
+        for (int i = 0; i < n; i++) {
+            c1[i] = c2[i] = 0;
+        }
 
-        computationF2(n, hLength, h1Compact, e1Full, c1);
-        computationF2(n, hLength, h2Compact, e2Full, c2);
+
+        my_computationF2(n, hLength, h1Compact, e1Full, c1);
+        my_computationF2(n, hLength, h2Compact, e2Full, c2);
 
 
         for (int i = 0; i < n; i++) {
@@ -827,12 +966,13 @@ void decoder(long long seed, int epoh) {
         }
 
         for (int z = 0; z < num_it; z++) {
-            for (int i = 0; i < n; i++)
+            for (int i = 0; i < n; i++) {
                 upc1[i] = upc2[i] = 0;
+            }
 
 
-            computationZ(n, hLength, h1TransCompact, sTemp, upc1);
-            computationZ(n, hLength, h2TransCompact, sTemp, upc2);
+            my_computationZ_last(n, hLength, h1TransCompact, sTemp, upc1);
+            my_computationZ_last(n, hLength, h2TransCompact, sTemp, upc2);
 
             for (int j = 0; j < n; j++) {
                 if (upc1[j] >= T) {
@@ -850,10 +990,8 @@ void decoder(long long seed, int epoh) {
             }
 
 
-            computationF2(n, hLength, h1Compact, u, c1);
-
-
-            computationF2(n, hLength, h2Compact, v, c2);
+            my_computationF2(n, hLength, h1Compact, u, c1);
+            my_computationF2(n, hLength, h2Compact, v, c2);
 
             for (int i = 0; i < n; i++) {
                 sTemp[i] = s[i] ^ c1[i] ^ c2[i];
@@ -906,12 +1044,11 @@ void decoder(long long seed, int epoh) {
     free(upc2);
 
 
-    printf("original mod\n");
+    printf("original decoder\n");
     printf("The elapsed time is %f seconds\n", time_spent);
     printf("One run is %f seconds\n", (time_spent / epoh));
-    printf("%f \n", 100.0 * suc / (fail + suc));
+    printf("%f \n", 100.0 * suc / (double) epoh);
 }
-
 
 int test(int nFrom, int nTo) {
     int arrSize = 1;
@@ -986,7 +1123,7 @@ int test(int nFrom, int nTo) {
 }
 
 int main() {
-    int epoh = 100;
+    int epoh = 100000;
 
     long long seed = time(0);
 
@@ -995,6 +1132,7 @@ int main() {
     mainMasks[0] = 1 << (elementSize - 1);
     for (int i = 1; i < elementSize; i++)
         mainMasks[i] = mainMasks[i - 1] >> 1;
+
     denseArrayFromCompactMasks = calloc(elementSize, sizeof(unsigned short));
     denseArrayFromCompactMasks[elementSize - 1] = 1;
     for (int i = elementSize - 2; i >= 0; i--) {
@@ -1014,9 +1152,9 @@ int main() {
 
     srand(time(0));
 
-    //decoderOptimized(seed, epoh);
-    testDecoder(seed, epoh);
-    //decoder(seed, epoh);
+    decoderOptimized(seed, epoh);
+    //testDecoder(seed, epoh);
+    decoder(seed, epoh);
     return 0;
 }
 
@@ -1026,6 +1164,27 @@ computationF2(unsigned short n, int arrSize, const unsigned short *inda, const u
     for (int i = 0; i < arrSize; i++) {
         for (int j = 0; j < n; j++) {
             c[j] = (c[j] + b[(j - inda[i] + n) % n]) % 2;
+        }
+    }
+}
+
+void
+my_computationF2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
+                 unsigned short *c) {
+    //printf("begin computation\n");
+    int j;
+    int new_j;
+    for (unsigned short *i = inda; i != inda + arrSize; i++) {
+        j = 0;
+        new_j = n - *i + j;
+        for (; j < *i; j++) {
+            c[j] = (c[j] + b[new_j]) % 2;
+            new_j++;
+        }
+        new_j = j - *i;
+        for (; j < n; j++) {
+            c[j] = (c[j] + b[new_j]) % 2;
+            new_j++;
         }
     }
 }
@@ -1053,6 +1212,34 @@ computationZ(unsigned short n, int arrSize, const unsigned short *inda, const un
             c[j] = (c[j] + b[(j - inda[i] + n) % n]);
         }
     }
+}
+
+void
+my_computationZ_last(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
+                     unsigned short *c) {
+    //printf("begin computation\n");
+    unsigned short *pointer_c;
+    int j;
+    int new_j;
+    unsigned short *end = inda + arrSize;
+    for (unsigned short *i = inda; i != end; i++) {
+        pointer_c = c;
+        j = 0;
+        new_j = n - *i;
+        for (; j < *i; j++) {
+            *pointer_c = (*pointer_c + b[new_j]);
+            new_j++;
+            pointer_c++;
+        }
+        new_j = j - *i;
+        for (; j < n; j++) {
+            *pointer_c = (*pointer_c + b[new_j]);
+            new_j++;
+            pointer_c++;
+
+        }
+    }
+
 }
 
 
