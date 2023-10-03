@@ -15,6 +15,24 @@ unsigned short *calculateSparseAndUsual2NegMasks;
 
 int my_random_seed = 0;
 
+void baseComputationF2(unsigned short n, const unsigned short *a, const unsigned short *b, unsigned short *c);
+
+void baseComputationZ(unsigned short n, const unsigned short *a, const unsigned short *b, unsigned short *c);
+
+void
+my_computationF2_Fig2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
+                      unsigned short *c);
+
+
+void
+my_computationF3_Fig2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
+                      unsigned short *c);
+
+
+void
+my_computationZ_Fig2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
+                     unsigned short *c);
+
 /**стандартная свертка разреженного и не разреженного векторов F2
  * n - длина неразреженного вектора
  * arrSize - количество ненулевых элементов резреженного вектора
@@ -1050,6 +1068,1337 @@ void decoder(long long seed, int epoh) {
     printf("%f \n", 100.0 * suc / (double) epoh);
 }
 
+void fig1DecoderTestF2(long long seed, int epoh) {
+    srand(seed);
+
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+
+    unsigned short *h1Compact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h1TransCompact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *e1Compact = calloc(eLength, sizeof(unsigned short));
+
+    unsigned short *e1Full = calloc(n, sizeof(unsigned short));
+    unsigned short *h1Full = calloc(n, sizeof(unsigned short));
+
+    unsigned short *c1 = calloc(n, sizeof(unsigned short));
+
+
+    int resForPrint = 0;
+    /**Конец объявления*/
+    float suc = 0, fail = 0;
+
+    double time_spent = 0;
+
+
+    for (int asd = 0; asd < epoh; asd++) {
+        clock_t begin = clock();
+
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h1TransCompact[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+        }
+
+        for (int i = 0; i < n; i++) {
+            e1Full[i] = h1Full[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Full[e1Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < hLength; i++) {
+            h1Full[h1Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < n; i++) {
+            c1[i] = 0;
+        }
+
+        baseComputationF2(n, h1Full, e1Full, c1);
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+        resForPrint += c1[0] ^ 1;
+    }
+    free(h1Compact);
+    free(h1TransCompact);
+    free(e1Compact);
+
+    free(e1Full);
+    free(h1Full);
+
+    free(c1);
+
+
+    printf("fig1DecoderTestF2\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n", 100.0 * suc / (double) epoh);
+    printf("Nothing important %d\n", resForPrint);
+
+}
+
+void fig1DecoderTestZ(long long seed, int epoh) {
+    srand(seed);
+
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+
+    unsigned short *h1Compact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h1TransCompact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *e1Compact = calloc(eLength, sizeof(unsigned short));
+
+    unsigned short *e1Full = calloc(n, sizeof(unsigned short));
+    unsigned short *h1Full = calloc(n, sizeof(unsigned short));
+
+    unsigned short *c1 = calloc(n, sizeof(unsigned short));
+
+
+    int resForPrint = 0;
+    /**Конец объявления*/
+    float suc = 0, fail = 0;
+
+    double time_spent = 0;
+
+
+    for (int asd = 0; asd < epoh; asd++) {
+        clock_t begin = clock();
+
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h1TransCompact[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+        }
+
+        for (int i = 0; i < n; i++) {
+            e1Full[i] = h1Full[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Full[e1Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < hLength; i++) {
+            h1Full[h1Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < n; i++) {
+            c1[i] = 0;
+        }
+
+        baseComputationZ(n, h1Full, e1Full, c1);
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+        resForPrint += c1[0] ^ 1;
+    }
+    free(h1Compact);
+    free(h1TransCompact);
+    free(e1Compact);
+
+    free(e1Full);
+    free(h1Full);
+
+    free(c1);
+
+
+    printf("fig1DecoderTestZ\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n", 100.0 * suc / (double) epoh);
+    printf("Nothing important %d\n", resForPrint);
+
+}
+
+void fig2DecoderTestF2(long long seed, int epoh) {
+    srand(seed);
+
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+
+    unsigned short *h1Compact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h1TransCompact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *e1Compact = calloc(eLength, sizeof(unsigned short));
+
+    unsigned short *e1Full = calloc(n, sizeof(unsigned short));
+
+    unsigned short *c1 = calloc(n, sizeof(unsigned short));
+
+
+    int resForPrint = 0;
+    /**Конец объявления*/
+    float suc = 0, fail = 0;
+
+    double time_spent = 0;
+
+
+    for (int asd = 0; asd < epoh; asd++) {
+        clock_t begin = clock();
+
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h1TransCompact[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+        }
+
+        for (int i = 0; i < n; i++) {
+            e1Full[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Full[e1Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < n; i++) {
+            c1[i] = 0;
+        }
+
+        my_computationF2_Fig2(n, hLength, h1Compact, e1Full, c1);
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+        resForPrint += c1[0] ^ 1;
+    }
+    free(h1Compact);
+    free(h1TransCompact);
+    free(e1Compact);
+
+    free(e1Full);
+
+    free(c1);
+
+
+    printf("fig2DecoderTestF2\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n", 100.0 * suc / (double) epoh);
+    printf("Nothing important %d\n", resForPrint);
+
+}
+
+void fig2DecoderTestZ(long long seed, int epoh) {
+    srand(seed);
+
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+
+    unsigned short *h1Compact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h1TransCompact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *e1Compact = calloc(eLength, sizeof(unsigned short));
+
+    unsigned short *e1Full = calloc(n, sizeof(unsigned short));
+
+    unsigned short *c1 = calloc(n, sizeof(unsigned short));
+
+
+    int resForPrint = 0;
+    /**Конец объявления*/
+    float suc = 0, fail = 0;
+
+    double time_spent = 0;
+
+
+    for (int asd = 0; asd < epoh; asd++) {
+        clock_t begin = clock();
+
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h1TransCompact[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+        }
+
+        for (int i = 0; i < n; i++) {
+            e1Full[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Full[e1Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < n; i++) {
+            c1[i] = 0;
+        }
+
+        my_computationZ_Fig2(n, hLength, h1Compact, e1Full, c1);
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+        resForPrint += c1[0] ^ 1;
+    }
+    free(h1Compact);
+    free(h1TransCompact);
+    free(e1Compact);
+
+    free(e1Full);
+
+    free(c1);
+
+
+    printf("fig2DecoderTestZ\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n", 100.0 * suc / (double) epoh);
+    printf("Nothing important %d\n", resForPrint);
+
+}
+
+void fig3DecoderTestF2(long long seed, int epoh) {
+    srand(seed);
+
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+
+    unsigned short *h1Compact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h1TransCompact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *e1Compact = calloc(eLength, sizeof(unsigned short));
+
+    unsigned short *e1Full = calloc(n, sizeof(unsigned short));
+
+    unsigned short *c1 = calloc(n, sizeof(unsigned short));
+
+
+    int resForPrint = 0;
+    /**Конец объявления*/
+    float suc = 0, fail = 0;
+
+    double time_spent = 0;
+
+
+    for (int asd = 0; asd < epoh; asd++) {
+        clock_t begin = clock();
+
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h1TransCompact[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+        }
+
+        for (int i = 0; i < n; i++) {
+            e1Full[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Full[e1Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < n; i++) {
+            c1[i] = 0;
+        }
+
+        my_computationF3_Fig2(n, hLength, h1Compact, e1Full, c1);
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+        resForPrint += c1[0] ^ 1;
+    }
+    free(h1Compact);
+    free(h1TransCompact);
+    free(e1Compact);
+
+    free(e1Full);
+
+    free(c1);
+
+
+    printf("fig3DecoderTestF2\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n", 100.0 * suc / (double) epoh);
+    printf("Nothing important %d\n", resForPrint);
+}
+
+void fig4DecoderTestF2(long long seed, int epoh) {
+    srand(seed);
+
+
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+    unsigned short m = (n + elementSize - 1) / elementSize;
+
+
+    unsigned short *h1Compact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h1TransCompact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *e1Compact = calloc(eLength, sizeof(unsigned short));
+
+    unsigned short *e1Full = calloc(n, sizeof(unsigned short));
+
+    unsigned short *c1 = calloc(n, sizeof(unsigned short));
+
+
+    int resForPrint = 0;
+    /**Конец объявления*/
+    float suc = 0, fail = 0;
+
+    double time_spent = 0;
+
+
+    for (int asd = 0; asd < epoh; asd++) {
+        clock_t begin = clock();
+
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h1TransCompact[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+        }
+
+        for (int i = 0; i < n; i++) {
+            e1Full[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Full[e1Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < n; i++) {
+            c1[i] = 0;
+        }
+
+        calculateSparseAndUsual2NewVersion(n, hLength, m, h1Compact, e1Full, c1);
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+        resForPrint += c1[0] ^ 1;
+    }
+    free(h1Compact);
+    free(h1TransCompact);
+    free(e1Compact);
+
+    free(e1Full);
+
+    free(c1);
+
+
+    printf("fig4DecoderTestF2\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n", 100.0 * suc / (double) epoh);
+    printf("Nothing important %d\n", resForPrint);
+}
+
+void decoderOnlyBase(long long seed, int epoh) {
+    srand(seed);
+
+
+    /**|e1| + |e2| <= t
+     * |e1| = |e2| - не обязательно
+     *
+     * Для примера
+     * n = 4801
+     * |h1| = |h2| = 45
+     * |e1| + |e2| = 84
+     * T = 45/2+4*/
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+
+    unsigned short *h1Compact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h2Compact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h1TransCompact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h2TransCompact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *e1Compact = calloc(eLength, sizeof(unsigned short));
+    unsigned short *e2Compact = calloc(eLength, sizeof(unsigned short));
+
+    unsigned short *e1Full = calloc(n, sizeof(unsigned short));
+    unsigned short *e2Full = calloc(n, sizeof(unsigned short));
+    unsigned short *h1Full = calloc(n, sizeof(unsigned short));
+    unsigned short *h2Full = calloc(n, sizeof(unsigned short));
+    unsigned short *h1TransFull = calloc(n, sizeof(unsigned short));
+    unsigned short *h2TransFull = calloc(n, sizeof(unsigned short));
+
+
+    unsigned short *u = calloc(n, sizeof(unsigned short));
+    unsigned short *v = calloc(n, sizeof(unsigned short));
+    unsigned short *c1 = calloc(n, sizeof(unsigned short));
+    unsigned short *c2 = calloc(n, sizeof(unsigned short));
+    unsigned short *s = calloc(n, sizeof(unsigned short));
+    unsigned short *sTemp = calloc(n, sizeof(unsigned short));
+    unsigned short *upc1 = calloc(n, sizeof(unsigned short));
+    unsigned short *upc2 = calloc(n, sizeof(unsigned short));
+
+
+
+    /**Конец объявления*/
+    float suc = 0, fail = 0;
+
+    double time_spent = 0;
+
+
+    for (int asd = 0; asd < epoh; asd++) {
+
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h2Compact[i] = h1TransCompact[i] = h2TransCompact[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = e2Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(h2Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+        generateSparseArray(e2Compact, n, eLength);
+
+        for (int i = 0; i < n; i++) {
+            c1[i] = c2[i] = 0;
+            h1Full[i] = h2Full[i] = h1TransFull[i] = h2TransFull[i] = 0;
+        }
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+            h2TransCompact[i] = n - h2Compact[i];
+            h1Full[h1Compact[i]] = 1;
+            h2Full[h2Compact[i]] = 1;
+            h1TransFull[n - h1Compact[i]] = 1;
+            h2TransFull[n - h2Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < n; i++) {
+            e1Full[i] = e2Full[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Full[e1Compact[i]] = 1;
+            e2Full[e2Compact[i]] = 1;
+        }
+
+
+        baseComputationF2(n, h1Full, e1Full, c1);
+        baseComputationF2(n, h2Full, e2Full, c2);
+
+
+        for (int i = 0; i < n; i++) {
+            s[i] = c1[i] ^ c2[i];
+        }
+
+        /**посчитали S*/
+
+        clock_t begin = clock();
+
+
+        for (int i = 0; i < n; i++)
+            u[i] = v[i] = 0;
+
+        for (int i = 0; i < n; i++) {
+            sTemp[i] = s[i];
+        }
+
+        for (int z = 0; z < num_it; z++) {
+            for (int i = 0; i < n; i++) {
+                upc1[i] = upc2[i] = 0;
+            }
+
+
+            baseComputationZ(n, h1TransFull, sTemp, upc1);
+            baseComputationZ(n, h2TransFull, sTemp, upc2);
+
+            for (int j = 0; j < n; j++) {
+                if (upc1[j] >= T) {
+                    u[j] = u[j] ^ 1;
+                }
+
+                if (upc2[j] >= T) {
+                    v[j] = v[j] ^ 1;
+                }
+
+            }
+
+            for (int i = 0; i < n; i++) {
+                sTemp[i] = c1[i] = c2[i] = 0;
+            }
+
+
+            baseComputationF2(n, h1Full, u, c1);
+            baseComputationF2(n, h2Full, v, c2);
+
+            for (int i = 0; i < n; i++) {
+                sTemp[i] = s[i] ^ c1[i] ^ c2[i];
+            }
+
+            /**проверка s` на ноль*/
+            flag = 0;
+            exitFlag = 0;
+            for (int i = 0; i < n; i++) {
+                if (sTemp[i] != 0) {
+                    flag = 1;
+                    break;
+                }
+            }
+            if (!flag) {
+                exitFlag = 1;
+                break;
+            }
+
+        }
+
+        if (exitFlag) {
+            suc++;
+
+        } else {
+            fail++;
+        }
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+    }
+
+
+    free(h1Compact);
+    free(h2Compact);
+    free(h1TransCompact);
+    free(h2TransCompact);
+    free(e1Compact);
+    free(e2Compact);
+
+    free(e1Full);
+    free(e2Full);
+
+    free(h1Full);
+    free(h2Full);
+    free(h1TransFull);
+    free(h2TransFull);
+
+    free(u);
+    free(v);
+    free(c1);
+    free(c2);
+    free(s);
+    free(sTemp);
+    free(upc1);
+    free(upc2);
+
+
+    printf("decoderOnlyBase\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n", 100.0 * suc / (double) epoh);
+}
+
+
+void decoderOnlyOptimized(long long seed, int epoh) {
+    srand(seed);
+
+
+    /**|e1| + |e2| <= t
+     * |e1| = |e2| - не обязательно
+     *
+     * Для примера
+     * n = 4801
+     * |h1| = |h2| = 45
+     * |e1| + |e2| = 84
+     * T = 45/2+4*/
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+    //unsigned short n = 50;
+
+    unsigned short m = (n + elementSize - 1) / elementSize;
+
+    /**компактное хранение h1*/
+    unsigned short *h1Compact = calloc(hLength, sizeof(unsigned short));
+
+    /**компактное хранение h2*/
+    unsigned short *h2Compact = calloc(hLength, sizeof(unsigned short));
+
+    /**компактное хранение h1 в обратном порядке*/
+    unsigned short *h1TransCompact = calloc(hLength, sizeof(unsigned short));
+
+    /**компактное хранение h2 в обратном порядке*/
+    unsigned short *h2TransCompact = calloc(hLength, sizeof(unsigned short));
+
+
+
+    /**компактное хранение e1*/
+    unsigned short *e1Compact = calloc(eLength, sizeof(unsigned short));
+
+    /**компактное хранение e2*/
+    unsigned short *e2Compact = calloc(eLength, sizeof(unsigned short));
+
+    unsigned short *e1Compressed = calloc(m, sizeof(unsigned short));
+    unsigned short *e2Compressed = calloc(m, sizeof(unsigned short));
+
+    unsigned short *c1 = calloc(m, sizeof(unsigned short));
+    unsigned short *c2 = calloc(m, sizeof(unsigned short));
+    unsigned short *s = calloc(m, sizeof(unsigned short));
+
+    unsigned short *u = calloc(m, sizeof(unsigned short));
+    unsigned short *v = calloc(m, sizeof(unsigned short));;
+
+    unsigned short *sTemp = calloc(m, sizeof(unsigned short));
+    unsigned short *upc1 = calloc(n, sizeof(unsigned short));
+    unsigned short *upc2 = calloc(n, sizeof(unsigned short));
+    unsigned short *sTempDecompressed = calloc(n, sizeof(unsigned short));;
+
+    /**Конец объявления*/
+    float suc = 0, fail = 0;
+
+    double time_spent = 0;
+
+
+    for (int asd = 0; asd < epoh; asd++) {
+
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h2Compact[i] = h1TransCompact[i] = h2TransCompact[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = e2Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(h2Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+        generateSparseArray(e2Compact, n, eLength);
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+            h2TransCompact[i] = n - h2Compact[i];
+        }
+
+        for (int i = 0; i < m; i++) {
+            e1Compressed[i] = e2Compressed[i] = 0;
+        }
+
+        createDenseArrayFromCompact(e1Compressed, m, e1Compact, eLength);
+        createDenseArrayFromCompact(e2Compressed, m, e2Compact, eLength);
+
+
+        for (int i = 0; i < m; i++) {
+            c1[i] = c2[i] = s[i] = 0;
+        }
+
+        calculateSparseAndUsual2NewVersion(n, hLength, m, h1Compact, e1Compressed, c1);
+        calculateSparseAndUsual2NewVersion(n, hLength, m, h2Compact, e2Compressed, c2);
+
+        for (int i = 0; i < m; i++) {
+            s[i] = c1[i] ^ c2[i];
+        }
+
+        /**посчитали S*/
+
+        clock_t begin = clock();
+
+        for (int i = 0; i < m; i++)
+            u[i] = v[i] = 0;
+
+        for (int i = 0; i < m; i++) {
+            sTemp[i] = s[i];
+        }
+
+        for (int z = 0; z < num_it; z++) {
+            for (int i = 0; i < n; i++)
+                upc1[i] = upc2[i] = 0;
+
+            for (int i = 0; i < n; i++)
+                sTempDecompressed[i] = 0;
+
+            decompressArray(n, m, sTempDecompressed, sTemp);
+
+            my_computationZ_last(n, hLength, h1TransCompact, sTempDecompressed, upc1);
+            my_computationZ_last(n, hLength, h2TransCompact, sTempDecompressed, upc2);
+
+            for (int j = 0; j < n; j++) {
+                if (upc1[j] >= T) {
+                    u[j / elementSize] = u[j / elementSize] ^ mainMasks[j % elementSize];
+                }
+
+                if (upc2[j] >= T) {
+                    v[j / elementSize] = v[j / elementSize] ^ mainMasks[j % elementSize];
+                }
+
+            }
+
+            for (int i = 0; i < m; i++) {
+                sTemp[i] = c1[i] = c2[i] = 0;
+            }
+
+            calculateSparseAndUsual2NewVersion(n, hLength, m, h1Compact, u, c1);
+            calculateSparseAndUsual2NewVersion(n, hLength, m, h2Compact, v, c2);
+
+            for (int i = 0; i < m; i++) {
+                sTemp[i] = s[i] ^ c1[i] ^ c2[i];
+            }
+
+            /**проверка s` на ноль*/
+            flag = 0;
+            exitFlag = 0;
+            for (int i = 0; i < m; i++) {
+                if (sTemp[i] != 0) {
+                    flag = 1;
+                    break;
+                }
+            }
+
+            if (!flag) {
+                exitFlag = 1;
+                break;
+            }
+
+        }
+
+        if (exitFlag) {
+            suc++;
+
+        } else {
+            fail++;
+        }
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+
+    }
+
+    free(h1Compact);
+    free(h2Compact);
+    free(h1TransCompact);
+    free(h2TransCompact);
+    free(e1Compact);
+    free(e2Compact);
+    free(e1Compressed);
+    free(e2Compressed);
+    free(c1);
+    free(c2);
+    free(s);
+    free(u);
+    free(v);
+    free(sTemp);
+    free(upc1);
+    free(upc2);
+    free(sTempDecompressed);
+
+    printf("decoderOnlyOptimized\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n", 100.0 * suc / (double) (epoh));
+}
+
+void decoderFullBase(long long seed, int epoh) {
+    srand(seed);
+
+
+    /**|e1| + |e2| <= t
+     * |e1| = |e2| - не обязательно
+     *
+     * Для примера
+     * n = 4801
+     * |h1| = |h2| = 45
+     * |e1| + |e2| = 84
+     * T = 45/2+4*/
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+
+    unsigned short *h1Compact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h2Compact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h1TransCompact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h2TransCompact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *e1Compact = calloc(eLength, sizeof(unsigned short));
+    unsigned short *e2Compact = calloc(eLength, sizeof(unsigned short));
+
+    unsigned short *e1Full = calloc(n, sizeof(unsigned short));
+    unsigned short *e2Full = calloc(n, sizeof(unsigned short));
+    unsigned short *h1Full = calloc(n, sizeof(unsigned short));
+    unsigned short *h2Full = calloc(n, sizeof(unsigned short));
+    unsigned short *h1TransFull = calloc(n, sizeof(unsigned short));
+    unsigned short *h2TransFull = calloc(n, sizeof(unsigned short));
+
+
+    unsigned short *u = calloc(n, sizeof(unsigned short));
+    unsigned short *v = calloc(n, sizeof(unsigned short));
+    unsigned short *c1 = calloc(n, sizeof(unsigned short));
+    unsigned short *c2 = calloc(n, sizeof(unsigned short));
+    unsigned short *s = calloc(n, sizeof(unsigned short));
+    unsigned short *sTemp = calloc(n, sizeof(unsigned short));
+    unsigned short *upc1 = calloc(n, sizeof(unsigned short));
+    unsigned short *upc2 = calloc(n, sizeof(unsigned short));
+
+
+
+    /**Конец объявления*/
+    float suc = 0, fail = 0;
+
+    double time_spent = 0;
+
+
+    for (int asd = 0; asd < epoh; asd++) {
+        clock_t begin = clock();
+
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h2Compact[i] = h1TransCompact[i] = h2TransCompact[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = e2Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(h2Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+        generateSparseArray(e2Compact, n, eLength);
+
+        for (int i = 0; i < n; i++) {
+            c1[i] = c2[i] = 0;
+            h1Full[i] = h2Full[i] = h1TransFull[i] = h2TransFull[i] = 0;
+        }
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+            h2TransCompact[i] = n - h2Compact[i];
+            h1Full[h1Compact[i]] = 1;
+            h2Full[h2Compact[i]] = 1;
+            h1TransFull[n - h1Compact[i]] = 1;
+            h2TransFull[n - h2Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < n; i++) {
+            e1Full[i] = e2Full[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Full[e1Compact[i]] = 1;
+            e2Full[e2Compact[i]] = 1;
+        }
+
+
+        baseComputationF2(n, h1Full, e1Full, c1);
+        baseComputationF2(n, h2Full, e2Full, c2);
+
+
+        for (int i = 0; i < n; i++) {
+            s[i] = c1[i] ^ c2[i];
+        }
+
+        /**посчитали S*/
+
+
+
+        for (int i = 0; i < n; i++)
+            u[i] = v[i] = 0;
+
+        for (int i = 0; i < n; i++) {
+            sTemp[i] = s[i];
+        }
+
+        for (int z = 0; z < num_it; z++) {
+            for (int i = 0; i < n; i++) {
+                upc1[i] = upc2[i] = 0;
+            }
+
+
+            baseComputationZ(n, h1TransFull, sTemp, upc1);
+            baseComputationZ(n, h2TransFull, sTemp, upc2);
+
+            for (int j = 0; j < n; j++) {
+                if (upc1[j] >= T) {
+                    u[j] = u[j] ^ 1;
+                }
+
+                if (upc2[j] >= T) {
+                    v[j] = v[j] ^ 1;
+                }
+
+            }
+
+            for (int i = 0; i < n; i++) {
+                sTemp[i] = c1[i] = c2[i] = 0;
+            }
+
+
+            baseComputationF2(n, h1Full, u, c1);
+            baseComputationF2(n, h2Full, v, c2);
+
+            for (int i = 0; i < n; i++) {
+                sTemp[i] = s[i] ^ c1[i] ^ c2[i];
+            }
+
+            /**проверка s` на ноль*/
+            flag = 0;
+            exitFlag = 0;
+            for (int i = 0; i < n; i++) {
+                if (sTemp[i] != 0) {
+                    flag = 1;
+                    break;
+                }
+            }
+            if (!flag) {
+                exitFlag = 1;
+                break;
+            }
+
+        }
+
+        if (exitFlag) {
+            suc++;
+
+        } else {
+            fail++;
+        }
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+    }
+
+
+    free(h1Compact);
+    free(h2Compact);
+    free(h1TransCompact);
+    free(h2TransCompact);
+    free(e1Compact);
+    free(e2Compact);
+
+    free(e1Full);
+    free(e2Full);
+
+    free(h1Full);
+    free(h2Full);
+    free(h1TransFull);
+    free(h2TransFull);
+
+    free(u);
+    free(v);
+    free(c1);
+    free(c2);
+    free(s);
+    free(sTemp);
+    free(upc1);
+    free(upc2);
+
+
+    printf("decoderFullBase\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n", 100.0 * suc / (double) epoh);
+}
+
+void decoderFullOptimized(long long seed, int epoh) {
+    srand(seed);
+
+
+    /**|e1| + |e2| <= t
+     * |e1| = |e2| - не обязательно
+     *
+     * Для примера
+     * n = 4801
+     * |h1| = |h2| = 45
+     * |e1| + |e2| = 84
+     * T = 45/2+4*/
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+    //unsigned short n = 50;
+
+    unsigned short m = (n + elementSize - 1) / elementSize;
+
+    /**компактное хранение h1*/
+    unsigned short *h1Compact = calloc(hLength, sizeof(unsigned short));
+
+    /**компактное хранение h2*/
+    unsigned short *h2Compact = calloc(hLength, sizeof(unsigned short));
+
+    /**компактное хранение h1 в обратном порядке*/
+    unsigned short *h1TransCompact = calloc(hLength, sizeof(unsigned short));
+
+    /**компактное хранение h2 в обратном порядке*/
+    unsigned short *h2TransCompact = calloc(hLength, sizeof(unsigned short));
+
+
+
+    /**компактное хранение e1*/
+    unsigned short *e1Compact = calloc(eLength, sizeof(unsigned short));
+
+    /**компактное хранение e2*/
+    unsigned short *e2Compact = calloc(eLength, sizeof(unsigned short));
+
+    unsigned short *e1Compressed = calloc(m, sizeof(unsigned short));
+    unsigned short *e2Compressed = calloc(m, sizeof(unsigned short));
+
+    unsigned short *c1 = calloc(m, sizeof(unsigned short));
+    unsigned short *c2 = calloc(m, sizeof(unsigned short));
+    unsigned short *s = calloc(m, sizeof(unsigned short));
+
+    unsigned short *u = calloc(m, sizeof(unsigned short));
+    unsigned short *v = calloc(m, sizeof(unsigned short));;
+
+    unsigned short *sTemp = calloc(m, sizeof(unsigned short));
+    unsigned short *upc1 = calloc(n, sizeof(unsigned short));
+    unsigned short *upc2 = calloc(n, sizeof(unsigned short));
+    unsigned short *sTempDecompressed = calloc(n, sizeof(unsigned short));;
+
+    /**Конец объявления*/
+    float suc = 0, fail = 0;
+
+    double time_spent = 0;
+
+
+    for (int asd = 0; asd < epoh; asd++) {
+        clock_t begin = clock();
+
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h2Compact[i] = h1TransCompact[i] = h2TransCompact[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = e2Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(h2Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+        generateSparseArray(e2Compact, n, eLength);
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+            h2TransCompact[i] = n - h2Compact[i];
+        }
+
+        for (int i = 0; i < m; i++) {
+            e1Compressed[i] = e2Compressed[i] = 0;
+        }
+
+        createDenseArrayFromCompact(e1Compressed, m, e1Compact, eLength);
+        createDenseArrayFromCompact(e2Compressed, m, e2Compact, eLength);
+
+
+        for (int i = 0; i < m; i++) {
+            c1[i] = c2[i] = s[i] = 0;
+        }
+
+        calculateSparseAndUsual2NewVersion(n, hLength, m, h1Compact, e1Compressed, c1);
+        calculateSparseAndUsual2NewVersion(n, hLength, m, h2Compact, e2Compressed, c2);
+
+        for (int i = 0; i < m; i++) {
+            s[i] = c1[i] ^ c2[i];
+        }
+
+        /**посчитали S*/
+
+
+
+        for (int i = 0; i < m; i++)
+            u[i] = v[i] = 0;
+
+        for (int i = 0; i < m; i++) {
+            sTemp[i] = s[i];
+        }
+
+        for (int z = 0; z < num_it; z++) {
+            for (int i = 0; i < n; i++)
+                upc1[i] = upc2[i] = 0;
+
+            for (int i = 0; i < n; i++)
+                sTempDecompressed[i] = 0;
+
+            decompressArray(n, m, sTempDecompressed, sTemp);
+
+            my_computationZ_last(n, hLength, h1TransCompact, sTempDecompressed, upc1);
+            my_computationZ_last(n, hLength, h2TransCompact, sTempDecompressed, upc2);
+
+            for (int j = 0; j < n; j++) {
+                if (upc1[j] >= T) {
+                    u[j / elementSize] = u[j / elementSize] ^ mainMasks[j % elementSize];
+                }
+
+                if (upc2[j] >= T) {
+                    v[j / elementSize] = v[j / elementSize] ^ mainMasks[j % elementSize];
+                }
+
+            }
+
+            for (int i = 0; i < m; i++) {
+                sTemp[i] = c1[i] = c2[i] = 0;
+            }
+
+            calculateSparseAndUsual2NewVersion(n, hLength, m, h1Compact, u, c1);
+            calculateSparseAndUsual2NewVersion(n, hLength, m, h2Compact, v, c2);
+
+            for (int i = 0; i < m; i++) {
+                sTemp[i] = s[i] ^ c1[i] ^ c2[i];
+            }
+
+            /**проверка s` на ноль*/
+            flag = 0;
+            exitFlag = 0;
+            for (int i = 0; i < m; i++) {
+                if (sTemp[i] != 0) {
+                    flag = 1;
+                    break;
+                }
+            }
+
+            if (!flag) {
+                exitFlag = 1;
+                break;
+            }
+
+        }
+
+        if (exitFlag) {
+            suc++;
+
+        } else {
+            fail++;
+        }
+        clock_t end = clock();
+        time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+
+    }
+
+    free(h1Compact);
+    free(h2Compact);
+    free(h1TransCompact);
+    free(h2TransCompact);
+    free(e1Compact);
+    free(e2Compact);
+    free(e1Compressed);
+    free(e2Compressed);
+    free(c1);
+    free(c2);
+    free(s);
+    free(u);
+    free(v);
+    free(sTemp);
+    free(upc1);
+    free(upc2);
+    free(sTempDecompressed);
+
+    printf("decoderFullOptimized\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("%f \n", 100.0 * suc / (double) (epoh));
+}
+
 int test(int nFrom, int nTo) {
     int arrSize = 1;
     int counter = 0;
@@ -1189,6 +2538,26 @@ my_computationF2(unsigned short n, int arrSize, const unsigned short *inda, cons
     }
 }
 
+void
+my_computationF2_Fig2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
+                      unsigned short *c) {
+    for (int i = 0; i < arrSize; i++) {
+        for (int j = 0; j < n; j++) {
+            c[j] = (c[j] + b[(j - inda[i] + n) % n]) % 2;
+        }
+    }
+}
+
+void
+my_computationF3_Fig2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
+                      unsigned short *c) {
+    for (int i = 0; i < arrSize; i++) {
+        for (int j = 0; j < n; j++) {
+            c[j] = (c[j] ^ b[(j - inda[i] + n) % n]);
+        }
+    }
+}
+
 void baseComputationF2(unsigned short n, const unsigned short *a, const unsigned short *b, unsigned short *c) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
@@ -1240,6 +2609,16 @@ my_computationZ_last(unsigned short n, int arrSize, const unsigned short *inda, 
         }
     }
 
+}
+
+void
+my_computationZ_Fig2(unsigned short n, int arrSize, const unsigned short *inda, const unsigned short *b,
+                     unsigned short *c) {
+    for (int i = 0; i < arrSize; i++) {
+        for (int j = 0; j < n; j++) {
+            c[j] = (c[j] + b[(j - inda[i] + n) % n]);
+        }
+    }
 }
 
 
