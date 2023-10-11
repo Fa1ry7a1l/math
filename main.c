@@ -1161,6 +1161,98 @@ void fig1DecoderTestF2(long long seed, int epoh) {
     printf("Nothing important %d\n", resForPrint);
 
 }
+void fig1DecoderTestF2V2(long long seed, int epoh) {
+    srand(seed);
+
+    unsigned short hLength = 45;
+    unsigned short eLength = 42;
+    unsigned T = hLength / 2 + 5;
+
+    unsigned short flag = 0;
+    unsigned short exitFlag = 0;
+
+    unsigned short num_it = 100;
+
+    unsigned short n = 4801;
+
+    unsigned short *h1Compact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *h1TransCompact = calloc(hLength, sizeof(unsigned short));
+    unsigned short *e1Compact = calloc(eLength, sizeof(unsigned short));
+
+    unsigned short *e1Full = calloc(n, sizeof(unsigned short));
+    unsigned short *h1Full = calloc(n, sizeof(unsigned short));
+
+    unsigned short *c1 = calloc(n, sizeof(unsigned short));
+
+
+    int resForPrint = 0;
+    /**Конец объявления*/
+    float suc = 0, fail = 0;
+
+    double time_spent = 0;
+
+
+    for (int asd = 0; asd < epoh; asd++) {
+
+        for (int i = 0; i < hLength; i++) {
+            h1Compact[i] = h1TransCompact[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Compact[i] = 0;
+        }
+
+        /**заполняем вектора данными*/
+        generateSparseArray(h1Compact, n, hLength);
+        generateSparseArray(e1Compact, n, eLength);
+
+        for (int i = 0; i < hLength; i++) {
+            h1TransCompact[i] = n - h1Compact[i];
+        }
+
+        for (int i = 0; i < n; i++) {
+            e1Full[i] = h1Full[i] = 0;
+        }
+
+        for (int i = 0; i < eLength; i++) {
+            e1Full[e1Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < hLength; i++) {
+            h1Full[h1Compact[i]] = 1;
+        }
+
+        for (int i = 0; i < n; i++) {
+            c1[i] = 0;
+        }
+        for(int z= 0;z<10;z++) {
+            clock_t begin = clock();
+
+            baseComputationF2(n, h1Full, e1Full, c1);
+            clock_t end = clock();
+            time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
+            resForPrint += c1[0] ^ 1;
+        }
+    }
+    free(h1Compact);
+    free(h1TransCompact);
+    free(e1Compact);
+
+    free(e1Full);
+    free(h1Full);
+
+    free(c1);
+
+
+    printf("fig1DecoderTestF2V2\n");
+    printf("The elapsed time is %f seconds\n", time_spent);
+    printf("One run is %f seconds\n", (time_spent / epoh));
+    printf("One run is %f seconds after itarations\n", ((time_spent / epoh )/ 10));
+
+    printf("%f \n", 100.0 * suc / (double) epoh);
+    printf("Nothing important %d\n", resForPrint);
+
+}
 
 void fig1DecoderTestZ(long long seed, int epoh) {
     srand(seed);
@@ -2107,15 +2199,16 @@ int main() {
 
     /*конец блока инициализации*/
     fig1DecoderTestF2(seed, epoh);
+    //fig1DecoderTestF2V2(seed, epoh);
     fig1DecoderTestZ(seed, epoh);
     fig2DecoderTestF2(seed, epoh);
     fig2DecoderTestZ(seed, epoh);
     fig3DecoderTestF2(seed, epoh);
     fig4DecoderTestF2(seed, epoh);
 
-    /*decoderOnlyBase(seed, epoh);
+    decoderOnlyBase(seed, epoh);
     decoderOnlyOptimized(seed, epoh);
-    testDecoder(seed, epoh);*/
+    testDecoder(seed, epoh);
 
     return 0;
 }
