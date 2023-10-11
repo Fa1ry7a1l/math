@@ -1487,7 +1487,7 @@ void fig2DecoderTestZ(long long seed, int epoh) {
         }
         clock_t begin = clock();
 
-        my_computationZ_Fig2(n, hLength, h1Compact, e1Full, c1);
+        my_computationZ_last(n, hLength, h1Compact, e1Full, c1);
         clock_t end = clock();
         time_spent += (double) (end - begin) / CLOCKS_PER_SEC;
         resForPrint += c1[0] ^ 1;
@@ -2172,7 +2172,7 @@ int test(int nFrom, int nTo) {
 }
 
 int main() {
-    int epoh = 10000;
+    int epoh = 100000;
 
     long long seed = time(0);
 
@@ -2198,17 +2198,17 @@ int main() {
     }
 
     /*конец блока инициализации*/
-    fig1DecoderTestF2(seed, epoh);
+    /*fig1DecoderTestF2(seed, epoh);
     //fig1DecoderTestF2V2(seed, epoh);
     fig1DecoderTestZ(seed, epoh);
-    fig2DecoderTestF2(seed, epoh);
+    fig2DecoderTestF2(seed, epoh);*/
     fig2DecoderTestZ(seed, epoh);
-    fig3DecoderTestF2(seed, epoh);
+    /*fig3DecoderTestF2(seed, epoh);
     fig4DecoderTestF2(seed, epoh);
 
     decoderOnlyBase(seed, epoh);
     decoderOnlyOptimized(seed, epoh);
-    testDecoder(seed, epoh);
+    testDecoder(seed, epoh);*/
 
     return 0;
 }
